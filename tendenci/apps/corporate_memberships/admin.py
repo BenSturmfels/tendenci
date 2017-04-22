@@ -90,6 +90,13 @@ class CorpMembershipAppFieldAdmin(admin.TabularInline):
     template = "corporate_memberships/admin/corpmembershipapp/tabular.html"
 
 
+def clone_apps(model_admin, request, queryset):
+    for form in queryset:
+        form.clone()
+
+clone_apps.short_description = 'Clone selected forms'
+
+
 class CorpMembershipAppAdmin(admin.ModelAdmin):
     inlines = (CorpMembershipAppFieldAdmin, )
     prepopulated_fields = {'slug': ['name']}
@@ -118,6 +125,7 @@ class CorpMembershipAppAdmin(admin.ModelAdmin):
     )
     filter_vertical = ('parent_entities',)
     form = CorpMembershipAppForm
+    actions = (clone_apps,)
 
     class Media:
         js = (

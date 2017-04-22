@@ -177,11 +177,15 @@ def app_preview(request, slug,
 
 
 @is_enabled('corporate_memberships')
-def corpmembership_add_pre(request,
+def corpmembership_add_pre(request, slug="",
                 template='corporate_memberships/applications/add_pre.html'):
-    app = CorpMembershipApp.objects.current_app()
-    if not app:
-        raise Http404
+    if not slug:
+        app = CorpMembershipApp.objects.current_app()
+        if not app:
+            raise Http404
+    else:
+        app = get_object_or_404(CorpMembershipApp, slug=slug)
+
     form = CreatorForm(request.POST or None)
 
     if request.method == "POST":
@@ -195,7 +199,7 @@ def corpmembership_add_pre(request,
             EventLog.objects.log(instance=creator)
 
             # redirect to add
-            return HttpResponseRedirect('%s%s' % (reverse('corpmembership.add',
+            return HttpResponseRedirect('%s%s' % (reverse('corpmembership.add_slug',
                                                           args=[app.slug]),
                                               '?hash=%s' % hash))
 
@@ -218,17 +222,17 @@ def corpmembership_add(request, slug='',
         if not creator:
             # anonymous user - redirect them to enter their
             # contact email before processing
+            if slug:
+                return HttpResponseRedirect(reverse('corpmembership.add_pre_slug', args=[slug]))
             return HttpResponseRedirect(reverse('corpmembership.add_pre'))
-
     if not slug:
         app = CorpMembershipApp.objects.current_app()
         if not app:
             raise Http404
     else:
         app = get_object_or_404(CorpMembershipApp, slug=slug)
-        current_app = CorpMembershipApp.objects.current_app()
 
-        if app.id != current_app.id:
+        if not app.is_active():
             return HttpResponseRedirect(reverse('corpmembership_app.preview',
                                                 args=[app.slug]))
     is_superuser = request.user.profile.is_superuser
@@ -346,10 +350,8 @@ def corpmembership_add(request, slug='',
                 if is_superuser and corp_membership.status \
                     and corp_membership.status_detail == 'active':
                     corp_membership.approve_join(request)
-
-            return HttpResponseRedirect(reverse('corpmembership.add_conf',
-                                                args=[corp_membership.id]))
-
+            return HttpResponseRedirect(reverse('corpmembership.add_conf_slug',
+                                                args=[corp_membership.id, app.slug]))
     context = {'app': app,
                "app_fields": app_fields,
                'corpprofile_form': corpprofile_form,
@@ -358,16 +360,18 @@ def corpmembership_add(request, slug='',
 
 
 @is_enabled('corporate_memberships')
-def corpmembership_add_conf(request, id,
+def corpmembership_add_conf(request, id, slug="",
             template="corporate_memberships/applications/add_conf.html"):
     """
         Corporate membership add conf
     """
     corp_membership = get_object_or_404(CorpMembership, id=id)
-    app = CorpMembershipApp.objects.current_app()
-
-    if not app:
-        raise Http404
+    if not slug:
+        app = CorpMembershipApp.objects.current_app()
+        if not app:
+            raise Http404
+    else:
+        app = get_object_or_404(CorpMembershipApp, slug=slug)
 
     context = {"corporate_membership": corp_membership,
                'app': app}
@@ -377,14 +381,17 @@ def corpmembership_add_conf(request, id,
 @is_enabled('corporate_memberships')
 @login_required
 @superuser_required
-def corpmembership_upgrade(request, id,
+def corpmembership_upgrade(request, id, slug="",
                        template='corporate_memberships/applications/upgrade.html'):
     """
     Corporate membership upgrade.
     """
-    app = CorpMembershipApp.objects.current_app()
-    if not app:
-        raise Http404
+    if not slug:
+        app = CorpMembershipApp.objects.current_app()
+        if not app:
+            raise Http404
+    else:
+        app = get_object_or_404(CorpMembershipApp, slug=slug)
     corp_membership = get_object_or_404(CorpMembership, id=id)
     corp_profile = corp_membership.corp_profile
     original_corp_memb_type = corp_membership.corporate_membership_type
@@ -438,14 +445,18 @@ def corpmembership_upgrade(request, id,
 
 @is_enabled('corporate_memberships')
 @login_required
-def corpmembership_edit(request, id,
-                       template='corporate_memberships/applications/edit.html'):
+def corpmembership_edit(request, id, slug="",
+                        template='corporate_memberships/applications/edit.html'):
     """
     Corporate membership edit.
     """
-    app = CorpMembershipApp.objects.current_app()
-    if not app:
-        raise Http404
+    if not slug:
+        app = CorpMembershipApp.objects.current_app()
+        if not app:
+            raise Http404
+    else:
+        app = get_object_or_404(CorpMembershipApp, slug=slug)
+
     corp_membership = get_object_or_404(CorpMembership, id=id)
 
     if not corp_membership.allow_edit_by(request.user):
@@ -560,14 +571,17 @@ def corpprofile_view(request, id, template="corporate_memberships/profiles/view.
 
 
 @is_enabled('corporate_memberships')
-def corpmembership_view(request, id,
+def corpmembership_view(request, id, slug="",
                 template="corporate_memberships/applications/view.html"):
     """
         view a corporate membership
     """
-    app = CorpMembershipApp.objects.current_app()
-    if not app:
-        raise Http404
+    if not slug:
+        app = CorpMembershipApp.objects.current_app()
+        if not app:
+            raise Http404
+    else:
+        app = get_object_or_404(CorpMembershipApp, slug=slug)
     corp_membership = get_object_or_404(CorpMembership, id=id)
     corp_membership.status_detail = corp_membership.real_time_status_detail
 
@@ -969,7 +983,7 @@ def corpmembership_approve(request, id,
 
 @is_enabled('corporate_memberships')
 @login_required
-def corp_renew(request, id,
+def corp_renew(request, id, slug="",
                template='corporate_memberships/renewal.html'):
     corp_membership = get_object_or_404(CorpMembership, id=id)
 
@@ -997,8 +1011,11 @@ def corp_renew(request, id,
         if latest_renewed:
             return HttpResponseRedirect(reverse('corpmembership.view',
                                         args=[latest_renewed.id]))
+    if not slug:
+        corpmembership_app = CorpMembershipApp.objects.current_app()
+    else:
+        corpmembership_app = get_object_or_404(CorpMembershipApp, slug=slug)
 
-    corpmembership_app = CorpMembershipApp.objects.current_app()
     new_corp_membership = corp_membership.copy()
     form = CorpMembershipRenewForm(
                             request.POST or None,
@@ -1157,6 +1174,7 @@ def corp_renew(request, id,
                 summary_data['individual_count'] = summary_data['membership_cap']
                 summary_data['above_cap_individual_count'] = summary_data['total_individual_count'] - summary_data['membership_cap']
 
+
     summary_data['individual_total'] = summary_data['individual_count'
                                         ] * summary_data['individual_price']
     summary_data['above_cap_individual_total'] = summary_data['above_cap_individual_count'
@@ -1175,7 +1193,7 @@ def corp_renew(request, id,
 
 
 @is_enabled('corporate_memberships')
-def corp_renew_conf(request, id,
+def corp_renew_conf(request, id, slug="",
                     template="corporate_memberships/renewal_conf.html"):
     corp_membership = get_object_or_404(CorpMembership, id=id)
 
@@ -1184,8 +1202,10 @@ def corp_renew_conf(request, id,
                     corp_membership):
         if not corp_membership.allow_view_by(request.user):
             raise Http403
-
-    corpmembership_app = CorpMembershipApp.objects.current_app()
+    if not slug:
+        corpmembership_app = CorpMembershipApp.objects.current_app()
+    else:
+        corpmembership_app = get_object_or_404(CorpMembershipApp, slug=slug)
 
     EventLog.objects.log(instance=corp_membership)
     context = {"corp_membership": corp_membership,
