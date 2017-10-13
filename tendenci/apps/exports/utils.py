@@ -1,4 +1,4 @@
-import subprocess
+import subprocess, os
 import datetime
 import csv
 from StringIO import StringIO
@@ -55,7 +55,8 @@ def render_csv(filename, title_list, data_list):
                     row_item_list[i] = row_item_list[i].strftime('%Y-%m-%d')
                 elif isinstance(row_item_list[i], datetime.time):
                     row_item_list[i] = row_item_list[i].strftime('%H:%M:%S')
-                row_item_list[i] = row_item_list[i].encode("utf-8")
+                elif isinstance(row_item_list[i], basestring):
+                    row_item_list[i] = row_item_list[i].encode("utf-8")
         csv_writer.writerow(row_item_list)
 
     return response
@@ -68,7 +69,7 @@ def run_export_task(app_label, model_name, fields):
     )
 
     if settings.USE_SUBPROCESS:
-        subprocess.Popen(['python', 'manage.py', 'run_export_task', unicode(export.pk)] + fields)
+        subprocess.Popen([os.environ.get('_', 'python'), 'manage.py', 'run_export_task', unicode(export.pk)] + fields)
     else:
         from django.core.management import call_command
         args = [unicode(export.pk)] + fields

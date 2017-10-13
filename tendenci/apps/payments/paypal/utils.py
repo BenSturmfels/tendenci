@@ -18,9 +18,9 @@ from tendenci.apps.site_settings.utils import get_setting
 
 def prepare_paypal_form(request, payment):
     amount = "%.2f" % payment.amount
-    image_url = get_setting("site", "global", "MerchantLogo")
+    image_url = get_setting('site', 'global', 'merchantlogo')
     site_url = get_setting('site', 'global', 'siteurl')
-    notify_url = '%s/%s' % (site_url, reverse('paypal.ipn'))
+    notify_url = '%s%s' % (site_url, reverse('paypal.ipn'))
     currency_code = get_setting('site', 'global', 'currency')
     if not currency_code:
         currency_code = 'USD'
@@ -180,6 +180,11 @@ def paypal_thankyou_processing(request, response_d, **kwargs):
         is_valid = verify_no_fraud(response_d, payment)
 
         if is_valid:
+            charset = response_d.get('charset', '')
+            # make sure data is encoded in utf-8 before processing
+            if charset and not charset in ('ascii', 'utf8', 'utf-8'):
+                for k in response_d.keys():
+                    response_d[k] = response_d[k].decode(charset).encode('utf-8')
             payment_update_paypal(request, response_d, payment)
             payment_processing_object_updates(request, payment)
             processed = True

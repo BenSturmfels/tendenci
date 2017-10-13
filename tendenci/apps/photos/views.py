@@ -253,14 +253,8 @@ def photo_original(request, id):
     """
     photo = get_object_or_404(Image, id=id)
 
-    allowed_to_view_original = [
-        request.user.profile.is_superuser,
-        request.user == photo.creator,
-        request.user == photo.owner,
-        photo.get_license().name != 'All Rights Reserved',
-    ]
-
-    if not any(allowed_to_view_original):
+    # check permissions
+    if not has_perm(request.user, 'photos.view_image', photo):
         raise Http403
 
     image_data = default_storage.open(unicode(photo.image.file), 'rb').read()
@@ -331,7 +325,10 @@ def edit(request, id, set_id=0, form_class=PhotoEditForm, template_name="photos/
                 photo = update_perms_and_save(request, form, photo)
 
                 messages.add_message(request, messages.SUCCESS, _("Successfully updated photo '%(title)s'" % {'title': unicode(photo)}) )
-                return HttpResponseRedirect(reverse("photo", kwargs={"id": photo.id, "set_id": set_id}))
+                if set_id:
+                    return HttpResponseRedirect(reverse("photo", kwargs={"id": photo.id, "set_id": set_id}))
+                else:
+                    return HttpResponseRedirect(reverse("photo", kwargs={"id": photo.id}))
         else:
             form = form_class(instance=photo, user=request.user)
 
@@ -583,7 +580,7 @@ def handle_uploaded_photo(request, photoset_id, file_path):
     # serialize queryset
     data = serializers.serialize("json", Image.objects.filter(id=photo.id))
 
-    cache_image = Popen(["python", "manage.py", "precache_photo", str(photo.pk)])
+    cache_image = Popen([os.environ.get('_', 'python'), "manage.py", "precache_photo", str(photo.pk)])
 
 
 @is_enabled('photos')

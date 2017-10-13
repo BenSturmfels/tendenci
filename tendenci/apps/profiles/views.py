@@ -2,7 +2,7 @@
 import os
 import math
 import time
-import subprocess
+import subprocess, sys
 from datetime import datetime, timedelta
 from django.db import models
 from django.contrib.auth.decorators import login_required
@@ -305,7 +305,7 @@ def search(request, template_name="profiles/search.html"):
             profiles = profiles.exclude(hide_in_search=True)
 
     if membership_type:
-        profiles = profiles.filter(
+        profiles = profiles.filter(user__membershipdefault__status_detail='active',
             user__membershipdefault__membership_type_id=membership_type)
 
     profiles = profiles.order_by('user__last_name', 'user__first_name')
@@ -1181,7 +1181,10 @@ def merge_profiles(request, sid, template_name="profiles/merge_profiles.html"):
                                             field_dict[field_name] = master_user
                                             # check if the master record exists
                                             if model.objects.filter(**field_dict).exists():
-                                                obj.delete()
+                                                if hasattr(obj, 'hard_delete'):
+                                                    obj.hard_delete()
+                                                else:  
+                                                    obj.delete()
                                             else:
                                                 setattr(obj, field_name, master_user)
                                                 obj.save()
@@ -1211,7 +1214,10 @@ def merge_profiles(request, sid, template_name="profiles/merge_profiles.html"):
                                             if updated:
                                                 master_obj.save()
                                             # delete obj
-                                            obj.delete()
+                                            if hasattr(obj, 'hard_delete'):
+                                                obj.hard_delete()
+                                            else: 
+                                                obj.delete()
         
                         master.save()
                         profile.delete()
@@ -1248,7 +1254,7 @@ def profile_export(request, template_name="profiles/export.html"):
         default_storage.save(temp_file_path, ContentFile(''))
 
         # start the process
-        subprocess.Popen(["python", "manage.py",
+        subprocess.Popen([os.environ.get('_', 'python'), "manage.py",
                           "profile_export_process",
                           '--export_fields=%s' % export_fields,
                           '--identifier=%s' % identifier,
@@ -1423,7 +1429,7 @@ def user_import_preview(request, uimport_id, template_name='profiles/import/prev
                                      args=[uimport.id]))
         else:
             if uimport.status == 'not_started':
-                subprocess.Popen(["python", "manage.py",
+                subprocess.Popen([os.environ.get('_', 'python'), "manage.py",
                               "users_import_preprocess",
                               str(uimport.pk)])
 
@@ -1448,7 +1454,7 @@ def user_import_process(request, uimport_id):
         uimport.num_processed = 0
         uimport.save()
         # start the process
-        subprocess.Popen(["python", "manage.py",
+        subprocess.Popen([os.environ.get('_', 'python'), "manage.py",
                           "import_users",
                           str(uimport.pk),
                           str(request.user.pk)])

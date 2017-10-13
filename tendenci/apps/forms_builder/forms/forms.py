@@ -26,6 +26,7 @@ from tendenci.apps.recurring_payments.widgets import BillingCycleWidget, Billing
 from tendenci.apps.forms_builder.forms.models import FormEntry, FieldEntry, Field, Form, Pricing
 from tendenci.apps.forms_builder.forms.settings import FIELD_MAX_LENGTH
 from tendenci.apps.files.validators import FileValidator
+from tendenci.apps.base.fields import CountrySelectField
 
 
 template_choices = [
@@ -79,7 +80,9 @@ class FormForForm(FormControlWidgetMixin, forms.ModelForm):
                     field_class = forms.MultipleChoiceField
                     field_widget = 'django.forms.CheckboxSelectMultiple'
 
-                elif field.field_type == 'CountryField' or field.field_type == 'StateProvinceField':
+                elif field.field_type == 'CountryField':
+                    field_class = CountrySelectField
+                elif field.field_type == 'StateProvinceField':
                     field_class = getattr(forms, 'ChoiceField')
                 else:
                     field_class = getattr(forms, field_class)
@@ -87,7 +90,7 @@ class FormForForm(FormControlWidgetMixin, forms.ModelForm):
                 arg_names = field_class.__init__.im_func.func_code.co_varnames
                 if "max_length" in arg_names:
                     field_args["max_length"] = FIELD_MAX_LENGTH
-                if "choices" in arg_names:
+                if "choices" in arg_names and field.field_type != 'CountryField':
                     field_args["choices"] = field.get_choices()
                     #field_args["choices"] = zip(choices, choices)
                 if "initial" in arg_names:
@@ -123,9 +126,11 @@ class FormForForm(FormControlWidgetMixin, forms.ModelForm):
                 else:
                     form.fields[field_key].widget.widgets[0].attrs['class'] += ' formforform-field'
                     form.fields[field_key].widget.widgets[1].attrs['class'] += ' formforform-field'
-
-                if form.fields[field_key].widget.__class__.__name__.lower() == 'selectdatewidget':
+                widget_name = form.fields[field_key].widget.__class__.__name__.lower()
+                if widget_name == 'selectdatewidget':
                     form.fields[field_key].widget.years = range(1920, THIS_YEAR + 10)
+                if widget_name in ('dateinput', 'selectdatewidget', 'datetimeinput'):
+                    form.fields[field_key].initial = datetime.now()
 
         def add_pricing_fields(form, formforform):
             # include pricing options if any
@@ -236,7 +241,7 @@ class FormForForm(FormControlWidgetMixin, forms.ModelForm):
             entry.pricing = self.cleaned_data['pricing_option']
             custom_price = self.data.get('custom_price_%s' % entry.pricing.id)
             if custom_price:
-                entry.custom_price = custom_price
+                entry.custom_price = currency_check(custom_price)
             entry.save()
 
         return entry

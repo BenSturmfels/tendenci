@@ -644,13 +644,13 @@ class UserForm(FormControlWidgetMixin, forms.ModelForm):
         login_link = _('click <a href="/accounts/login/?next=%s">HERE</a> to log in before completing your application.') % self.request.get_full_path()
         username_validate_err_msg = mark_safe(_('This Username already exists in the system. If this is your Username, %s Else, select a new Username to continue.') % login_link)
         email_validate_err_msg = mark_safe(_('This Email address already exists in the system. If this is your Email address, %s Else, select a different Email address to continue.') % login_link)
-        activation_link = _('<a href="%s?username=%s&email=%s&next=%s">HERE</a>') % (
-                                                    reverse('profile.activate_email'), 
-                                                    requests.utils.quote(un), requests.utils.quote(email), 
-                                                    self.request.get_full_path())
-        inactive_user_err_msg =  mark_safe(_('''This email "%s" is associated with previous site activity.
-                    Please click %s and we'll send you an email to activate your account and then you 
-                    will be returned to this application.''') % (email, activation_link))
+        activation_link = _('<a href="{activate_link}?username={username}&email={email}&next={next_path}">HERE</a>').format(
+                                                    activate_link=reverse('profile.activate_email'), 
+                                                    username=requests.utils.quote(un), email=requests.utils.quote(email), 
+                                                    next_path=self.request.get_full_path())
+        inactive_user_err_msg =  mark_safe(_('''This email "{email}" is associated with previous site activity.
+                    Please click {activation_link} and we'll send you an email to activate your account and then you 
+                    will be returned to this application.''').format(email=email, activation_link=activation_link))
 
         if self.request.user.is_authenticated() and self.request.user.username == un:
             # they are logged in and join or renewal for themselves 
@@ -775,6 +775,9 @@ class ProfileForm(FormControlWidgetMixin, forms.ModelForm):
 
     def __init__(self, app_field_objs, *args, **kwargs):
         super(ProfileForm, self).__init__(*args, **kwargs)
+
+        del self.fields['referral_source']
+
         assign_fields(self, app_field_objs)
         self.field_names = [name for name in self.fields.keys()]
 
@@ -938,7 +941,7 @@ class DemographicsForm(FormControlWidgetMixin, forms.ModelForm):
                 # Commenting out the line below because it loses the field widget as the field has already been assigned
                 #self.fields[field_name] = field
                 # set initial value
-                if self.demographics:
+                if self.demographics and field_name in self.fields:
                     ud_field = MembershipAppField.objects.get(field_name=field_name,
                         membership_app=self.app, display=True)
                     if ud_field.field_type == u'FileField':
@@ -1139,21 +1142,23 @@ class MembershipDefault2Form(FormControlWidgetMixin, forms.ModelForm):
         self.add_form_control_class()
 
         if self.membership_app.donation_enabled:
-            self.fields['donatin_option_value'] = DonationOptionAmountField(required=False)
-            self.fields['donatin_option_value'].label = self.membership_app.donation_label
-            self.fields['donatin_option_value'].widget = DonationOptionAmountWidget(attrs={},
+            self.fields['donation_option_value'] = DonationOptionAmountField(required=False)
+            self.fields['donation_option_value'].label = self.membership_app.donation_label
+            self.fields['donation_option_value'].widget = DonationOptionAmountWidget(attrs={},
                                                 default_amount=self.membership_app.donation_default_amount)
             require_payment = True
 
         if not require_payment:
             del self.fields['payment_method']
         else:
-            self.fields['payment_method'].queryset = self.membership_app.payment_methods.all()
+            payment_method_qs = self.membership_app.payment_methods.all()
+            if not (request_user and request_user.is_authenticated() and request_user.is_superuser):
+                payment_method_qs = payment_method_qs.exclude(admin_only=True)
+            self.fields['payment_method'].queryset = payment_method_qs
    
 
-    def clean_donatin_option_value(self):
-        value_list = self.cleaned_data['donatin_option_value']
-        print 'value_list=', value_list
+    def clean_donation_option_value(self):
+        value_list = self.cleaned_data['donation_option_value']
         if value_list:
             donation_option, donation_amount = value_list
             if donation_option == 'custom':
@@ -1315,7 +1320,7 @@ class NoticeForm(forms.ModelForm):
         return value
 
 
-class AppCorpPreForm(forms.Form):
+class AppCorpPreForm(FormControlWidgetMixin, forms.Form):
     corporate_membership_id = forms.ChoiceField(
                             label=_('Join Under the Corporation:'))
     secret_code = forms.CharField(

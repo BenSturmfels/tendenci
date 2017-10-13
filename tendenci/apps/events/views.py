@@ -5,7 +5,7 @@
 import re
 import calendar
 import itertools
-import subprocess
+import subprocess, os
 import time
 import xlwt
 from collections import OrderedDict
@@ -1671,8 +1671,8 @@ def register(request, event_id=0,
 
 
     # check if event allows registration
-    if not event.registration_configuration and \
-       event.registration_configuration.enabled:
+    if not (event.registration_configuration and
+            event.registration_configuration.enabled):
         raise Http404
 
     # check spots available
@@ -2093,8 +2093,8 @@ def multi_register(request, event_id=0, template_name="events/reg8n/multi_regist
     event = get_object_or_404(Event, pk=event_id)
 
     # check if event allows registration
-    if not event.registration_configuration and \
-       event.registration_configuration.enabled:
+    if not (event.registration_configuration and
+            event.registration_configuration.enabled):
         raise Http404
 
     # set up pricing
@@ -2745,11 +2745,11 @@ def month_view(request, year=None, month=None, type=None, template_name='events/
             if not check_month(month, year, current_type[0]):
                 current_date = current_date.strftime('%b %Y')
                 latest_date = latest_event[0].start_dt.strftime('%b %Y')
-                msg_string = 'No %s Events were found for %s. The next %s event is on %s, shown below.' % (current_type[0], current_date, current_type[0], latest_date)
+                msg_string = u'No %s Events were found for %s. The next %s event is on %s, shown below.' % (unicode(current_type[0]), current_date, unicode(current_type[0]), latest_date)
                 messages.add_message(request, messages.INFO, _(msg_string))
                 return HttpResponseRedirect(reverse('event.month', args=[latest_year, latest_month, current_type[0].slug]))
         else:
-            msg_string = 'No more %s Events were found.' % (current_type[0])
+            msg_string = u'No more %s Events were found.' % (unicode(current_type[0]))
             messages.add_message(request, messages.INFO, _(msg_string))
 
     if year <= 1900 or year >= 9999:
@@ -4134,7 +4134,7 @@ def add_addon(request, event_id, template_name="events/addons/add.html"):
                 option.save()
 
             EventLog.objects.log(instance=addon)
-            msg_string = 'Successfully added %s' % addon
+            msg_string = 'Successfully added %s' % unicode(addon)
             messages.add_message(request, messages.SUCCESS, _(msg_string))
             return redirect('event', event.pk)
     else:
@@ -4182,7 +4182,7 @@ def edit_addon(request, event_id, addon_id, template_name="events/addons/edit.ht
                 option.save()
 
             EventLog.objects.log(instance=addon)
-            msg_string = 'Successfully updated %s' % addon
+            msg_string = 'Successfully updated %s' % unicode(addon)
             messages.add_message(request, messages.SUCCESS, _(msg_string))
             return redirect('event', event.pk)
     else:
@@ -4386,7 +4386,7 @@ def import_process(request, import_id,
 
     import_i = get_object_or_404(Import, id=import_id)
 
-    subprocess.Popen(['python', 'manage.py', 'import_events', str(import_id)])
+    subprocess.Popen([os.environ.get('_', 'python'), 'manage.py', 'import_events', str(import_id)])
 
     return render_to_response(template_name, {
         'total': import_i.total_created + import_i.total_invalid,
@@ -4412,7 +4412,7 @@ def export(request, template_name="events/export.html"):
         temp_file_path = 'export/events/%s_temp.csv' % identifier
         default_storage.save(temp_file_path, ContentFile(''))
 
-        process_options = ["python", "manage.py", "event_export_process",
+        process_options = [os.environ.get('_', 'python'), "manage.py", "event_export_process",
                            "--identifier=%s" % identifier,
                            "--user=%s" % request.user.id]
         if by_type:

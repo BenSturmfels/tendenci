@@ -1,5 +1,6 @@
 import datetime
 import traceback
+import re
 from logging import getLogger
 from django.core.management.base import BaseCommand, CommandError
 from django.core.cache import cache
@@ -25,6 +26,7 @@ class Command(BaseCommand):
         from tendenci.apps.emails.models import Email
         from tendenci.apps.newsletters.models import Newsletter
         from tendenci.apps.site_settings.utils import get_setting
+        from tendenci.apps.base.utils import validate_email
 
         from tendenci.apps.newsletters.utils import get_newsletter_connection
 
@@ -69,6 +71,10 @@ class Command(BaseCommand):
 
         counter = 0
         for recipient in recipients:
+            # skip if not a valid email address
+            if not validate_email(recipient.member.email):
+                continue
+            
             subject = email.subject
             body = email.body
 
@@ -85,7 +91,11 @@ class Command(BaseCommand):
                 body = body.replace('[firstname]', recipient.member.first_name)
 
             if '[unsubscribe_url]' in body:
-                body = body.replace('[unsubscribe_url]', recipient.noninteractive_unsubscribe_url)
+                #body = body.replace('[unsubscribe_url]', recipient.noninteractive_unsubscribe_url)
+                # The unsubscribe_url link should be something like <a href="[unsubscribe_url]">Unsubscribe</a>.
+                # But it can be messed up sometimes. Let's prevent that from happening. 
+                p = r'(href=\")([^\"]*)(\[unsubscribe_url\])(\")'
+                body = re.sub(p, r'\1' + recipient.noninteractive_unsubscribe_url + r'\4', body)
 
             if '[browser_view_url]' in body:
                 body = body.replace('[browser_view_url]', newsletter.get_browser_view_url())
@@ -98,12 +108,13 @@ class Command(BaseCommand):
                     reply_to=email.reply_to,
                     recipient=recipient.member.email
                     )
+            print "Sending to %s" % recipient.member.email
             email_to_send.send(connection=connection)
             counter += 1
             print "Newsletter sent to %s" % recipient.member.email
 
             if newsletter.send_to_email2 and hasattr(recipient.member, 'profile') \
-                and recipient.member.profile.email2:
+                and validate_email(recipient.member.profile.email2):
                 email_to_send.recipient = recipient.member.profile.email2
                 email_to_send.send(connection=connection)
                 counter += 1

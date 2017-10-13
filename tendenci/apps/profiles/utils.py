@@ -16,6 +16,7 @@ from django.db.models import Q
 from django.db.models.fields import AutoField
 from django.template.loader import render_to_string
 from django.utils.encoding import smart_str
+from django.utils.html import format_html
 from django.core import exceptions
 
 from tendenci.apps.profiles.models import Profile
@@ -27,7 +28,6 @@ from tendenci.apps.site_settings.utils import get_setting
 
 
 def profile_edit_admin_notify(request, old_user, old_profile, profile, **kwargs):
-    from django.core.mail.message import EmailMessage
     from django.template import RequestContext
 
     subject = 'User Account Modification Notice for %s' % get_setting('site', 'global', 'sitedisplayname')
@@ -39,12 +39,13 @@ def profile_edit_admin_notify(request, old_user, old_profile, profile, **kwargs)
 
     sender = settings.DEFAULT_FROM_EMAIL
     recipients = ['%s<%s>' % (r[0], r[1]) for r in settings.ADMINS]
-    msg = EmailMessage(subject, body, sender, recipients)
-    msg.content_subtype = 'html'
-    try:
-        msg.send()
-    except:
-        pass
+    email = Email(
+            sender=sender,
+            recipient=recipients,
+            subject=subject,
+            body=body)
+    email.send(fail_silently=True)
+
 
 # return admin auth group as a list
 def get_admin_auth_group(name="Admin"):
@@ -228,7 +229,7 @@ def get_member_reminders(user, view_self=False):
         # renew_link depends on membership.app
         if not membership.app:
             membership.get_app()
-            
+
         if count > 1:
             my_msg = 'Your membership for %s' % membership.membership_type.name
         else:
@@ -247,17 +248,19 @@ def get_member_reminders(user, view_self=False):
         if membership.in_grace_period() or membership.is_expired():
             if membership.can_renew():
                 # expired but can renew
-                message = '%s has expired. <a href="%s">Renew Now</a> to remain an active member!' % (
+                message = format_html(
+                    '{} has expired. <a href="{}">Renew Now</a> to remain an active member!',
                     my_msg, renew_link)
                 reminders += ((message, renew_link, 'Renew Now'),)
             else:
                 # expired and out of renewal period
-                message = '%s has expired.' % my_msg
+                message = format_html('{} has expired.', my_msg)
                 reminders += ((message, renew_link, 'Re-register as a member here'),)
         else:
             # not expired, but in renewal period
             if membership.can_renew():
-                message = '%s will expire on %s. <a href="%s">Renew Now</a> to remain an active member!' % (
+                message = format_html(
+                    '{} will expire on {}. <a href="{}">Renew Now</a> to remain an active member!',
                     my_msg, membership.expire_dt.strftime('%d-%b-%Y'), renew_link)
                 reminders += ((message, renew_link, 'Renew Here'),)
 

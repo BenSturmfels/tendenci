@@ -73,7 +73,7 @@ MIDDLEWARE_CLASSES = (
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware', 
     'django.middleware.common.CommonMiddleware',
-    'pagination.middleware.PaginationMiddleware',
+    'dj_pagination.middleware.PaginationMiddleware',
     'tendenci.apps.profiles.middleware.ForceLogoutProfileMiddleware',
     'tendenci.apps.profiles.middleware.ProfileMiddleware',
     'tendenci.apps.base.middleware.Http403Middleware',
@@ -193,12 +193,12 @@ INSTALLED_APPS = (
     # applications
     'formtools',
     'bootstrap3',
-    'pagination', 
+    'dj_pagination',
     'tagging',
     'captcha',
     'haystack',
     'tastypie',
-    
+
     'tendenci',
     'tendenci.libs.model_report',
     'tendenci.libs.tinymce',
@@ -358,19 +358,25 @@ TINYMCE_DEFAULT_CONFIG = {
     'theme': "modern",
     'plugins': "image  advlist autolink lists link charmap print preview anchor \
         searchreplace visualblocks code fullscreen \
-        insertdatetime media table contextmenu paste textcolor colorpicker",
+        insertdatetime media table contextmenu paste textcolor colorpicker hr",
     'menubar': 'file edit insert view format table',
-    'toolbar': "code insertfile undo redo | styleselect | forecolor backcolor | bold italic | \
+    'toolbar': "code insertfile undo redo | styleselect | forecolor backcolor | bold italic hr | \
                 alignleft aligncenter alignright alignjustify | bullist numlist outdent \
                 indent | link image | fullscreen",
     'image_advtab': 'true',
+    'image_title': 'true',
     'media_alt_source': 'false',
     'media_poster': 'false',
     'cache_suffix': '?v=4.3.8',
     # Specify your css to apply to the editable area
     #'content_css': '/themes/<theme name>/media/css/styles.css',
     'resize': 'both',
-
+    'link_class_list': [
+        {'title': 'None', 'value': ''},
+        {'title': 'Primary Button', 'value': 'btn btn-primary'},
+        {'title': 'Default Button', 'value': 'btn btn-default'}
+        ],
+    
     'tabfocus_elements': ":prev,:next",
     'convert_urls': 'false',
     'handle_event_callback': "event_handler",
@@ -479,6 +485,8 @@ ADMIN_AUTH_GROUP_NAME = 'Admin'
 # --------------------------------------#
 CAPTCHA_FONT_SIZE = 50
 CAPTCHA_CHALLENGE_FUNCT = 'captcha.helpers.random_char_challenge'
+CAPTCHA_IMAGE_SIZE = (172,80)
+CAPTCHA_OUTPUT_FORMAT = u'%(image)s <br />%(hidden_field)s %(text_field)s'
 
 # ------------------------------------ #
 # Django Messaging

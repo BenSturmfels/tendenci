@@ -5,7 +5,7 @@ from hashlib import md5
 from dateutil.parser import parse
 from datetime import datetime, timedelta, date
 import time as ttime
-import subprocess
+import subprocess, sys
 from sets import Set
 import calendar
 from collections import OrderedDict
@@ -430,7 +430,7 @@ def membership_default_import_preview(request, mimport_id,
                                      args=[mimport.id]))
         else:
             if mimport.status == 'not_started':
-                subprocess.Popen(["python", "manage.py",
+                subprocess.Popen([os.environ.get('_', 'python'), "manage.py",
                               "membership_import_preprocess",
                               str(mimport.pk)])
 
@@ -454,7 +454,7 @@ def membership_default_import_process(request, mimport_id):
         mimport.num_processed = 0
         mimport.save()
         # start the process
-        subprocess.Popen(["python", "manage.py",
+        subprocess.Popen([os.environ.get('_', 'python'), "manage.py",
                           "import_membership_defaults",
                           str(mimport.pk),
                           str(request.user.pk)])
@@ -633,7 +633,7 @@ def membership_default_export(
             default_storage.save(temp_file_path, ContentFile(''))
 
             # start the process
-            subprocess.Popen(["python", "manage.py",
+            subprocess.Popen([os.environ.get('_', 'python'), "manage.py",
                           "membership_export_process",
                           '--export_fields=%s' % export_fields,
                           '--export_type=%s' % export_type,
@@ -933,8 +933,12 @@ def membership_default_add(request, slug='', membership_id=None,
         apply_cap, membership_cap, allow_above_cap, above_cap_price = corp_membership.get_cap_info()
         if apply_cap:
             if corp_membership.members_count >= membership_cap:
-                # email admin and corporate reps about this corp. has reached cap
-                email_sent = corp_membership.email_reps_cap_reached()
+                if corp_membership.members_count == membership_cap:
+                    # email admin and corporate reps about this corp. has reached cap
+                    # only sent when cap is reached so they don't get freaked out for too many emails
+                    email_sent = corp_membership.email_reps_cap_reached()
+                else:
+                    email_sent = False
                 
                 if not allow_above_cap:
                     reps = corp_membership.corp_profile.reps.all()
@@ -1218,7 +1222,7 @@ def membership_default_add(request, slug='', membership_id=None,
 
             if app.donation_enabled:
                 # check for donation
-                donation_option, donation_amount = membership_form2.cleaned_data.get('donatin_option_value', (None, None))
+                donation_option, donation_amount = membership_form2.cleaned_data.get('donation_option_value', (None, None))
                 if donation_option:
                     if donation_option == 'default':
                         donation_amount = app.donation_default_amount
@@ -2111,11 +2115,14 @@ def report_member_quick_list(request, template_name='reports/membership_quick_li
 
         table_data = []
         for mem in members:
-
+            if hasattr(mem.user, 'profile'):
+                company = mem.user.profile.company
+            else:
+                company = ''
             table_data.append([
                 mem.user.first_name,
                 mem.user.last_name,
-                mem.user.profile.company
+                company
             ])
 
         return render_csv(

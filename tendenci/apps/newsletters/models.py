@@ -1,5 +1,5 @@
 import datetime
-import subprocess
+import subprocess, os
 import uuid
 
 from django.conf import settings
@@ -364,7 +364,7 @@ class Newsletter(models.Model):
                 owner_username=user.username,
                 headline=self.email.subject,
                 slug=slugify(self.email.subject),
-                body=self.email.body)
+                body=self.email.body.replace('[browser_view_url]', reverse('newsletter.view_from_browser', args=[self.id])))
 
             self.article = article
             self.save()
@@ -399,7 +399,7 @@ class Newsletter(models.Model):
         return members
 
     def send_to_recipients(self):
-        subprocess.Popen(["python", "manage.py",
+        subprocess.Popen([os.environ.get('_', 'python'), "manage.py",
                               "send_newsletter",
                               str(self.pk)])
 

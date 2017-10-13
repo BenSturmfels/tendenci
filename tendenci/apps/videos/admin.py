@@ -16,8 +16,23 @@ class VideoInline(admin.TabularInline):
 
 
 class CategoryAdmin(admin.ModelAdmin):
+    list_display = ('id', 'name', 'position')
+    list_editable = ['position', 'name']
     prepopulated_fields = {'slug': ['name']}
     inlines = [VideoInline]
+    ordering = ('position',)
+    
+    class Media:
+        js = (
+            '//ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js',
+            '//ajax.googleapis.com/ajax/libs/jqueryui/1.11.0/jquery-ui.min.js',
+            'js/admin/admin-list-reorder.js',
+        )
+
+
+class VideoTypeAdmin(admin.ModelAdmin):
+    list_display = ('id', 'name',)
+    prepopulated_fields = {'slug': ['name']}
 
 
 class VideoAdmin(TendenciBaseModelAdmin):
@@ -29,10 +44,10 @@ class VideoAdmin(TendenciBaseModelAdmin):
         return u''
     get_release_dt.short_description = _('Release Date')
 
-    list_display = ['title', 'tags', 'category', 'video_type', 'get_release_dt', 'ordering']
-    list_editable = ['ordering']
+    list_display = ['title', 'tags', 'category', 'video_type', 'get_release_dt', 'position']
+    list_editable = ['category', 'video_type', 'position']
     prepopulated_fields = {'slug': ['title']}
-    search_fields = ['question', 'answer']
+    search_fields = ['title', 'description']
     fieldsets = (
         (None, {'fields': ('title', 'slug', 'category', 'video_type', 'image', 'clear_image', 'video_url', 'tags', 'description', 'release_dt')}),
         ('Permissions', {'fields': ('allow_anonymous_view',)}),
@@ -46,14 +61,14 @@ class VideoAdmin(TendenciBaseModelAdmin):
         )}),
     )
     form = VideoForm
-    ordering = ['-ordering']
+    ordering = ['-position']
 
     class Media:
         js = (
-            '%sjs/global/tinymce.event_handlers.js' % settings.STATIC_URL,
-#             '%sjs/jquery-1.6.2.min.js' % settings.STATIC_URL,
-#             '%sjs/jquery-ui-1.8.17.custom.min.js' % settings.STATIC_URL,
-#             '%sjs/admin/admin-list-reorder-ordering.js' % settings.STATIC_URL,
+            '//ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js',
+            '//ajax.googleapis.com/ajax/libs/jqueryui/1.11.0/jquery-ui.min.js',
+            'js/admin/admin-list-reorder.js',
+            'js/global/tinymce.event_handlers.js',
         )
     
     def get_fieldsets(self, request, obj=None):
@@ -67,4 +82,4 @@ class VideoAdmin(TendenciBaseModelAdmin):
 
 admin.site.register(Video, VideoAdmin)
 admin.site.register(Category, CategoryAdmin)
-admin.site.register(VideoType, CategoryAdmin)
+admin.site.register(VideoType, VideoTypeAdmin)
