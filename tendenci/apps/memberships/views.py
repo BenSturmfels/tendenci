@@ -10,6 +10,7 @@ from sets import Set
 import calendar
 from collections import OrderedDict
 from dateutil.relativedelta import relativedelta
+import urllib
 
 from django.core.urlresolvers import reverse
 from django.contrib.auth.models import User
@@ -57,7 +58,7 @@ from tendenci.apps.memberships.models import (
     MembershipType, Notice, MembershipImport, MembershipDefault, MembershipSet,
     MembershipImportData, MembershipApp, MembershipAppField)
 from tendenci.apps.memberships.forms import (
-    MembershipExportForm, AppCorpPreForm, MembershipDefaultForm,
+    CountryForm, MembershipExportForm, AppCorpPreForm, MembershipDefaultForm,
     ReportForm, MembershipDefaultUploadForm, UserForm, ProfileForm,
     EducationForm,
     DemographicsForm,
@@ -838,12 +839,39 @@ def membership_default_add_legacy(request):
 
 
 @is_enabled('memberships')
+def membership_default_select_country(
+        request, slug='', membership_id=None,
+        template='memberships/applications/select_country.html', **kwargs):
+    """
+    Select the country for the membership.
+    """
+    app = get_object_or_404(MembershipApp, slug=slug)
+
+    if not has_perm(request.user, 'memberships.view_app', app):
+        raise Http403
+
+    if request.method == 'POST':
+        country_form = CountryForm(request.POST)
+        if country_form.is_valid():
+            return HttpResponseRedirect(
+                reverse('membership_default.add', kwargs={'slug': slug}) + '?country={country}&email={email}'.format(
+                    country=urllib.quote(country_form.cleaned_data['country']),
+                    email=urllib.quote(country_form.cleaned_data['email'])))
+    else:
+        country_form = CountryForm()
+    return render(request, template, {'app': app, 'country_form': country_form})
+
+
+@is_enabled('memberships')
 def membership_default_add(request, slug='', membership_id=None,
                            template='memberships/applications/add.html', **kwargs):
     """
     Default membership application form.
     """
     from tendenci.apps.memberships.models import Notice
+
+    country = urllib.unquote(request.GET.get('country', ''))
+    email = urllib.unquote(request.GET.get('email', ''))
 
     user = None
     membership = None
@@ -1045,7 +1073,10 @@ def membership_default_add(request, slug='', membership_id=None,
             'country': corp_profile.country,
             'work_phone': corp_profile.phone,}
     else:
-        profile_initial = None
+        profile_initial = {
+        # Country used to pre-fill profile form.
+        'country': country,
+    }
 
     profile = user.profile if user else None
     profile_form = ProfileForm(
@@ -1054,6 +1085,17 @@ def membership_default_add(request, slug='', membership_id=None,
         instance=profile,
         initial=profile_initial
     )
+
+    # Hack so we can pass email though. The problem being that unlike profile
+    # where we can assign to profile.country, user is an AnonymousUser that
+    # won't accept an email. We need to switch it out for a real User so we can
+    # pass the prefilled email through to MembershipDefault2Form, which uses the
+    # "params" variable below.
+    user_hacked = False
+    if not user:
+        user_hacked = True
+        user = User(**user_initial)
+        user.profile = Profile(**profile_initial)
 
     params = {
         'request_user': request.user,
@@ -1065,6 +1107,12 @@ def membership_default_add(request, slug='', membership_id=None,
     }
     if is_renewal:
         params.update({'renew_from_id': membership.id})
+
+    # Country on the customer profile used to calculate price.
+    if user:
+        params['customer'].profile.country = user.profile.country
+    else:
+        params['customer'].profile.country = country
 
     if join_under_corporate:
         params['authentication_method'] = authentication_method

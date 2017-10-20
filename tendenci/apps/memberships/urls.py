@@ -98,6 +98,11 @@ urlpatterns = patterns(
         "membership_default_add_legacy",
         name="membership_default.add"),
 
+    # membership default select country and email for alternate pricing
+    url(r"^%s/applications/(?P<slug>[\w\-]+)/country/$" % urlpath,
+        "membership_default_select_country",
+        name="membership_default.select_country"),
+
     # membership default add
     url(r"^%s/applications/(?P<slug>[\w\-]+)/$" % urlpath,
         "membership_default_add",

@@ -2105,3 +2105,10 @@ class MembershipDefaultForm(TendenciBaseForm):
         # ***** end demographics *****
 
         return membership
+
+
+class CountryForm(FormControlWidgetMixin, forms.Form):
+    """
+    Select the country to influence membership price.
+    """
+    country = CountrySelectField(label=_("Country"))

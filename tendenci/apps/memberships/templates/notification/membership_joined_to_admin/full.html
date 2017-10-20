@@ -12,11 +12,7 @@
 
     <div>{{ SITE_GLOBAL_SITEDISPLAYNAME }} {{ app.name }} {% trans "Membership Submission" %}</div>
 
-    {% if membership.membership_type.price %}
-        <div style="margin-bottom:20px;">{% blocktrans with membership.membership_type as membership_type and membership.membership_type.price as membership_type_price %}Membership Type: {{ membership_type }} ${{ membership_type_price }}{% endblocktrans %}</div>
-    {% else %}
-        <div style="margin-bottom:20px;">{% blocktrans with membership.membership_type as membership_type %}Membership Type: {{ membership_type }} (Free) {% endblocktrans %}</div>
-    {% endif %}
+    <div style="margin-bottom:20px;">{% blocktrans with membership.membership_type as membership_type %}Membership Type: {{ membership_type }}{% endblocktrans %}</div>
 
     <div>{{ membership.user.first_name }} {{ membership.user.last_name }}</div>
     <div>{{ membership.user.email }}</div>

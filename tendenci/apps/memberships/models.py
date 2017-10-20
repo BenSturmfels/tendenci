@@ -309,8 +309,20 @@ class MembershipType(OrderingBaseModel, TendenciBaseModel):
             renew_mode = any([m.can_renew() for m in m_list])
 
         self.renewal_price = self.renewal_price or 0
-        renewal_price = self.renewal_price
-        price = self.price
+
+        # Look up country-specific prices for that MembershipType.
+        try:
+            country_price = MembershipTypePriceByCountry.objects.get(
+                membership_type=self, country=customer.profile.country)
+        except MembershipTypePriceByCountry.DoesNotExist:
+            price = self.price
+            admin_fee = self.admin_fee
+            renewal_price = self.renewal_price
+        else:
+            price = country_price.price
+            admin_fee = country_price.admin_fee
+            renewal_price = country_price.renewal_price
+
         above_cap_format = ''
 
         if corp_membership:
@@ -329,11 +341,11 @@ class MembershipType(OrderingBaseModel, TendenciBaseModel):
                 tcurrency(renewal_price)
             )
         else:
-            if self.admin_fee:
+            if admin_fee:
                 price_display = (self.PRICE_FORMAT + self.ADMIN_FEE_FORMAT) % (
                     self.name,
                     tcurrency(price),
-                    tcurrency(self.admin_fee)
+                    tcurrency(admin_fee)
                 )
             else:
                 price_display = (self.PRICE_FORMAT) % (
@@ -1621,10 +1633,23 @@ class MembershipDefault(TendenciBaseModel):
                     else:
                         return above_cap_price + (self.membership_type.admin_fee or 0)
 
-        if self.renewal:
-            return self.membership_type.renewal_price or 0
+        # Look up country-specific prices for that MembershipType.
+        try:
+            country_price = MembershipTypePriceByCountry.objects.get(
+                membership_type=self.membership_type, country=self.user.profile.country)
+        except MembershipTypePriceByCountry.DoesNotExist:
+            price = self.membership_type.price
+            admin_fee = self.membership_type.admin_fee
+            renewal_price = self.membership_type.renewal_price
         else:
-            return self.membership_type.price + (self.membership_type.admin_fee or 0)
+            price = country_price.price
+            admin_fee = country_price.admin_fee
+            renewal_price = country_price.renewal_price
+
+        if self.renewal:
+            return renewal_price or 0
+        else:
+            return price + (admin_fee or 0)
 
     def qs_memberships(self, **kwargs):
         """
@@ -2492,7 +2517,7 @@ class MembershipApp(TendenciBaseModel):
 
     @models.permalink
     def get_absolute_url(self):
-        return ('membership_default.add', [self.slug])
+        return ('membership_default.select_country', [self.slug])
 
     def save(self, *args, **kwargs):
         if not self.id:
@@ -2721,3 +2746,35 @@ class MembershipFile(File):
 
     class Meta:
         app_label = 'memberships'
+
+
+class MembershipTypePriceByCountry(models.Model):
+    """
+    Membership price variations for different countries.
+    """
+    membership_type = models.ForeignKey(MembershipType)
+    country = models.CharField(max_length=50)
+    price = models.DecimalField(
+        _('Price'),
+        max_digits=15,
+        decimal_places=2,
+        blank=True,
+        default=0,
+        help_text=_("Set 0 for free membership.")
+    )
+    renewal_price = models.DecimalField(_('Renewal Price'), max_digits=15, decimal_places=2,
+        blank=True, default=0, null=True, help_text=_("Set 0 for free membership."))
+    # for first time processing
+    admin_fee = models.DecimalField(_('Admin Fee'),
+        max_digits=15, decimal_places=2, blank=True, default=0, null=True,
+        help_text=_("Admin fee for the first time processing"))
+
+    # Do we need to vary the currency? What currencies are available though
+    # payment gateway?
+
+    class Meta:
+        app_label = 'memberships'
+        verbose_name_plural = 'Membership prices by country'
+
+    def __str__(self):
+        return '{} ({})'.format(self.membership_type, self.country)

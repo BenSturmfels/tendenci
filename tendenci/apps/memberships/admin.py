@@ -18,8 +18,8 @@ from tendenci.apps.user_groups.models import Group
 from tendenci.apps.base.utils import tcurrency
 from tendenci.apps.perms.admin import TendenciBaseModelAdmin
 from tendenci.apps.memberships.models import (
-    MembershipDefault, MembershipType, Notice,
-    MembershipAppField, MembershipApp)
+    MembershipApp, MembershipAppField, MembershipDefault, MembershipType,
+    MembershipTypePriceByCountry, Notice)
 from tendenci.apps.memberships.forms import (
     MembershipDefaultForm, NoticeForm,
     MembershipAppForm, MembershipAppFieldAdminForm)
@@ -930,3 +930,13 @@ admin.site.register(MembershipApp, MembershipAppAdmin)
 admin.site.register(MembershipAppField, MembershipAppField2Admin)
 admin.site.register(MembershipType, MembershipTypeAdmin)
 admin.site.register(Notice, NoticeAdmin)
+
+
+class MembershipTypePriceByCountryAdmin(admin.ModelAdmin):
+    list_display = ['__str__', 'country', 'price', 'admin_fee', 'renewal_price']
+    list_editable = ['country', 'price', 'admin_fee', 'renewal_price']
+    list_filter = ['membership_type', 'country']
+
+
+admin.site.register(
+    MembershipTypePriceByCountry, MembershipTypePriceByCountryAdmin)
