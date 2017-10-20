@@ -1131,7 +1131,7 @@ def membership_default_add(request, slug='', membership_id=None,
 
     membership_form = MembershipDefault2Form(app_fields,
         request.POST or None, initial=membership_initial,
-        multiple_membership=multiple_membership, **params)
+        multiple_membership=multiple_membership, country_code='AU', **params)
 
     captcha_form = CaptchaForm(request.POST or None)
     if request.user.is_authenticated() or not app.use_captcha:

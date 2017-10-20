@@ -886,3 +886,11 @@ admin.site.register(MembershipApp, MembershipAppAdmin)
 admin.site.register(MembershipAppField, MembershipAppField2Admin)
 admin.site.register(MembershipType, MembershipTypeAdmin)
 admin.site.register(Notice, NoticeAdmin)
+
+
+class MembershipTypePriceByCountryAdmin(admin.ModelAdmin):
+    list_editable = ['membership_type', 'country_code', 'price']
+
+
+admin.sites.register(
+    MembershipTypePriceByCountry, MembershipTypePriceByCountryAdmin)

@@ -306,9 +306,14 @@ class MembershipType(OrderingBaseModel, TendenciBaseModel):
             m_list = MembershipDefault.objects.filter(user=customer, membership_type=self)
             renew_mode = any([m.can_renew() for m in m_list])
 
-        self.renewal_price = self.renewal_price or 0
-        renewal_price = self.renewal_price
-        price = self.price
+        # Look up country-specific prices for that MembershipType.
+        try:
+            CountrySpecificMembershipTypePrice.objects.get(
+                membership_type=self, country_code=country_code)
+        except CountrySpecificMembershipTypePrice.DoesNotExist:
+            self.renewal_price = self.renewal_price or 0
+            renewal_price = self.renewal_price
+            price = self.price
         above_cap_format = ''
         
         if corp_membership:
@@ -2604,3 +2609,11 @@ class MembershipFile(File):
 
     class Meta:
         app_label = 'memberships'
+
+
+class MembershipTypePriceByCountry(models.Model):
+    membership_type = ForeignKey(MembershipType)
+    country_code = CharField(max_length=4)
+    price = DecimalField(null=True, blank=True)
+    # Do we need to vary the currency? What currencies are available though
+    # payment gateway?

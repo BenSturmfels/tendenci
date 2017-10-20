@@ -1035,7 +1035,9 @@ class MembershipDefault2Form(FormControlWidgetMixin, forms.ModelForm):
         model = MembershipDefault
         fields = "__all__" 
 
-    def __init__(self, app_field_objs, *args, **kwargs):
+    def __init__(self, app_field_objs, country_code=None, *args, **kwargs):
+        
+
         request_user = kwargs.pop('request_user')
         customer = kwargs.pop('customer', request_user)
         self.membership_app = kwargs.pop('membership_app')
@@ -1120,7 +1122,8 @@ class MembershipDefault2Form(FormControlWidgetMixin, forms.ModelForm):
                                         choices=((self.corp_membership.id, self.corp_membership),))
             else:
                 self.fields['corporate_membership_id'].widget = forms.widgets.Select(
-                                        choices=get_corporate_membership_choices())
+                                        choicbership_id'].widget = forms.widgets.Select(
+                                        choices=((self.corp_membership.id, seles=get_corporate_membership_choices())
                 self.fields['corporate_membership_id'].queryset = CorpMembership.objects.filter(
                                                 status=True).exclude(
                                                 status_detail__in=['archive', 'inactive'])
