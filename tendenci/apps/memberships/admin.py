@@ -933,9 +933,10 @@ admin.site.register(Notice, NoticeAdmin)
 
 
 class MembershipTypePriceByCountryAdmin(admin.ModelAdmin):
-    list_display = ['__str__', 'country', 'price', 'admin_fee', 'renewal_price']
-    list_editable = ['country', 'price', 'admin_fee', 'renewal_price']
+    list_display = ['__str__', 'price', 'admin_fee', 'renewal_price']
+    list_editable = ['price', 'admin_fee', 'renewal_price']
     list_filter = ['membership_type', 'country']
+    search_fields = ['country']
 
 
 admin.site.register(

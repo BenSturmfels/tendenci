@@ -1,3 +1,5 @@
+from __future__ import unicode_literals
+
 import os
 import hashlib
 import uuid
@@ -17,11 +19,12 @@ from django import forms
 from importlib import import_module
 from django.utils.safestring import mark_safe
 from django.core.files.storage import default_storage
-from django.utils.encoding import smart_str
+from django.utils.encoding import python_2_unicode_compatible, smart_str
 from django.core.urlresolvers import reverse
 from django.template.loader import render_to_string
 from django.template import RequestContext
 from django.db.models.fields import AutoField
+from django_countries import countries
 
 from tendenci.apps.base.utils import day_validate, is_blank, tcurrency
 from tendenci.apps.site_settings.utils import get_setting
@@ -2748,12 +2751,22 @@ class MembershipFile(File):
         app_label = 'memberships'
 
 
+@python_2_unicode_compatible
 class MembershipTypePriceByCountry(models.Model):
     """
     Membership price variations for different countries.
     """
     membership_type = models.ForeignKey(MembershipType)
-    country = models.CharField(max_length=50)
+    # Since country names can vary between translations, it might make more
+    # sense to key to the two-letter country code rather than the name. The name
+    # is what is stored the Tendenci profile though, so using the code wouldn't
+    # help a great deal and would require more conversion.
+    #
+    # Elsewhere in Tendenci, eg. Profile, they create a separate Form and feed
+    # that to the admin to get a drop-down list of countries. Feeding the
+    # countries in directly means we don't have to define a separate form.
+    country = models.CharField(max_length=50, choices=((name, name) for (code, name) in countries))
+    category = models.CharField(max_length=50, blank=True)
     price = models.DecimalField(
         _('Price'),
         max_digits=15,
@@ -2775,6 +2788,8 @@ class MembershipTypePriceByCountry(models.Model):
     class Meta:
         app_label = 'memberships'
         verbose_name_plural = 'Membership prices by country'
+        unique_together = ['membership_type', 'country']
+        ordering = ['membership_type', 'country']
 
     def __str__(self):
-        return '{} ({})'.format(self.membership_type, self.country)
+        return '{} ({})'.format(self.membership_type.name, self.country)
