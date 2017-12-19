@@ -1365,6 +1365,10 @@ def membership_default_add(request, slug='', membership_id=None,
                 args=[memberships[0].guid]
             ))
 
+    # Read-only version of the membership types from the form.
+    membership_types = [memtype.get_price_display(request.user, False)
+                        for memtype in membership_form.fields['membership_type'].queryset]
+
     context = {
         'app': app,
         'app_fields': app_fields,
@@ -1373,7 +1377,8 @@ def membership_default_add(request, slug='', membership_id=None,
         'education_form': education_form,
         'demographics_form': demographics_form,
         'membership_form': membership_form,
-        'captcha_form': captcha_form
+        'captcha_form': captcha_form,
+        'membership_types': membership_types,
     }
     return render_to_response(template, context, RequestContext(request))
 
