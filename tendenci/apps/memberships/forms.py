@@ -2112,3 +2112,4 @@ class CountryForm(FormControlWidgetMixin, forms.Form):
     Select the country to influence membership price.
     """
     country = CountrySelectField(label=_("Country"))
+    email = forms.EmailField()

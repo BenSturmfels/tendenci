@@ -1,5 +1,7 @@
 from __future__ import unicode_literals
 
+import collections
+from functools import reduce
 import os
 import hashlib
 import uuid
@@ -11,6 +13,7 @@ from dateutil.relativedelta import relativedelta
 
 from django.db import models
 from django.db.models.query_utils import Q
+from django.dispatch import receiver, Signal
 from django.template import Context, Template
 from django.utils.translation import ugettext_lazy as _
 from django.contrib.auth.models import User, AnonymousUser
@@ -49,6 +52,92 @@ from tendenci.apps.directories.models import Directory
 from tendenci.apps.industries.models import Industry
 from tendenci.apps.regions.models import Region
 from tendenci.apps.base.utils import UnicodeWriter
+
+
+# Signals the point that a membership price is calculated.
+calculate_membership_price = Signal(providing_args=['membership_type', 'user'])
+
+# Signal handlers can return an alternative price offer.
+PricingOffer  = collections.namedtuple(
+    'PricingOffer', 'label price admin_fee renewal_price')
+
+def lowest_price(p1, p2, renew=False):
+    """Returns the lowest of two PricingOffer instances."""
+    def _sum_null(lst):
+        lst = (i for i in lst if i is not None)
+        if lst:
+            return sum(lst)
+        else:
+            return None
+
+    if p1 is None and p2 is None:
+        return None
+    elif p1 is None:
+        return p2
+    elif p2 is None:
+        return p1
+
+    if not renew:
+        p1_price = _sum_null([p1.price, p1.admin_fee])
+        p2_price = _sum_null([p2.price, p2.admin_fee])
+    else:
+        p1_price = p1.renewal_price
+        p2_price = p2.renewal_price
+
+    if p1_price <= p2_price:
+        return p1
+    else:
+        return p2
+
+
+def lowest_price_renew(p1, p2):
+    """Return the lowest of two PricingOffer instances for renewal."""
+    return lowest_price(p1, p2, True)
+
+
+def best_pricing_offer(base, renew, membership_type, user):
+    """Signal for alternative pricing offers, collate and chose the best one."""
+    prices = [i for _, i in calculate_membership_price.send(
+        sender=MembershipType, membership_type=membership_type, user=user)]
+    prices.append(base)
+    if renew:
+        return reduce(lowest_price_renew, prices)
+    else:
+        return reduce(lowest_price, prices)
+
+
+@receiver(calculate_membership_price)
+def country_offer(sender, **kwargs):
+    """Offer country-specific pricing for this MembershipType."""
+    user = kwargs['user']
+    membership_type = kwargs['membership_type']
+
+    try:
+        country_price = MembershipTypePriceByCountry.objects.get(
+            membership_type=membership_type, country=user.profile.country)
+    except MembershipTypePriceByCountry.DoesNotExist:
+        pricing = None
+    else:
+        pricing = PricingOffer(
+            'resident of {}'.format(user.profile.country),
+            country_price.price,
+            country_price.admin_fee,
+            country_price.renewal_price)
+    return pricing
+
+
+@receiver(calculate_membership_price)
+def student_edu_email_offer(sender, **kwargs):
+    """Offer free memberships for students with .edu email."""
+    user = kwargs['user']
+    membership_type = kwargs['membership_type']
+
+    if membership_type.name == 'Student' and getattr(user, 'email', '').endswith('.edu'):
+        pricing = PricingOffer('holder of .edu email address', 0, 0, 0)
+    else:
+        pricing = None
+    return pricing
+
 
 # from south.modelsinspector import add_introspection_rules
 # add_introspection_rules([], ["^tinymce.models.HTMLField"])
@@ -313,18 +402,11 @@ class MembershipType(OrderingBaseModel, TendenciBaseModel):
 
         self.renewal_price = self.renewal_price or 0
 
-        # Look up country-specific prices for that MembershipType.
-        try:
-            country_price = MembershipTypePriceByCountry.objects.get(
-                membership_type=self, country=customer.profile.country)
-        except MembershipTypePriceByCountry.DoesNotExist:
-            price = self.price
-            admin_fee = self.admin_fee
-            renewal_price = self.renewal_price
-        else:
-            price = country_price.price
-            admin_fee = country_price.admin_fee
-            renewal_price = country_price.renewal_price
+        base_offer = PricingOffer(
+             '', self.price, self.admin_fee, self.renewal_price)
+        offer = best_pricing_offer(
+            base=base_offer, renew=renew_mode, membership_type=self, user=customer)
+        label, price, admin_fee, renewal_price = offer.label, offer.price, offer.admin_fee, offer.renewal_price
 
         above_cap_format = ''
 
@@ -359,7 +441,7 @@ class MembershipType(OrderingBaseModel, TendenciBaseModel):
         if above_cap_format:
             price_display = price_display + above_cap_format
 
-        return mark_safe(price_display)
+        return mark_safe(price_display + ' ' + label)
 
 class MembershipSet(models.Model):
     invoice = models.ForeignKey(Invoice)
@@ -1636,18 +1718,11 @@ class MembershipDefault(TendenciBaseModel):
                     else:
                         return above_cap_price + (self.membership_type.admin_fee or 0)
 
-        # Look up country-specific prices for that MembershipType.
-        try:
-            country_price = MembershipTypePriceByCountry.objects.get(
-                membership_type=self.membership_type, country=self.user.profile.country)
-        except MembershipTypePriceByCountry.DoesNotExist:
-            price = self.membership_type.price
-            admin_fee = self.membership_type.admin_fee
-            renewal_price = self.membership_type.renewal_price
-        else:
-            price = country_price.price
-            admin_fee = country_price.admin_fee
-            renewal_price = country_price.renewal_price
+        base_offer = PricingOffer(
+             '', self.membership_type.price, self.membership_type.admin_fee, self.membership_type.renewal_price)
+        offer = best_pricing_offer(
+            base=base_offer, renew=self.renewal, membership_type=self.membership_type, user=self.user)
+        label, price, admin_fee, renewal_price = offer.label, offer.price, offer.admin_fee, offer.renewal_price
 
         if self.renewal:
             return renewal_price or 0
@@ -2550,6 +2625,21 @@ class MembershipApp(TendenciBaseModel):
             self.get_absolute_url(), self.slug
         )
     application_form_link.allow_tags = True
+
+    def needs_payment(self, renew, user):
+        """Determines whether payment is required for any membership types."""
+
+        needs_payment = False
+        for mt in self.membership_types.all():
+            base_offer = PricingOffer(
+                '', mt.price, mt.admin_fee, mt.renewal_price)
+            offer = best_pricing_offer(
+                base=base_offer, renew=renew, membership_type=mt, user=user)
+            if not renew and sum_null([offer.price, offer.admin_fee]):
+                needs_payment = True
+            elif renew and offer.renewal_price:
+                needs_payment = True
+        return needs_payment
 
 
 class MembershipAppField(OrderingBaseModel):

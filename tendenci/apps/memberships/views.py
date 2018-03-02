@@ -67,7 +67,7 @@ from tendenci.apps.memberships.forms import (
 from tendenci.apps.memberships.utils import (prepare_chart_data,
     get_days, get_over_time_stats,
     get_membership_stats, ImportMembDefault,
-    get_membership_app, get_membership_summary_data)
+    get_membership_app, get_membership_summary_data, get_membership_type_choices)
 from tendenci.apps.base.forms import CaptchaForm
 from tendenci.apps.recurring_payments.models import RecurringPayment
 from tendenci.apps.perms.decorators import is_enabled
@@ -1049,11 +1049,24 @@ def membership_default_add(request, slug='', membership_id=None,
         # exclude the corp memb field if not join under corporate
         app_fields = app_fields.exclude(field_name='corporate_membership_id')
 
+    user_initial = {
+        'email': email,
+
+    }
+    if user:
+        user_initial = {
+            'username': user.username,
+            'first_name': user.first_name,
+            'last_name': user.last_name,
+            'email': user.email,
+        }
+
     user_form = UserForm(
         app_fields,
         request.POST or None,
         request=request,
         is_corp_rep=is_corp_rep,
+        initial=user_initial,
         instance=user)
 
     if not (request.user.profile.is_superuser or is_corp_rep) and user and 'username' in user_form.fields:
@@ -1105,6 +1118,11 @@ def membership_default_add(request, slug='', membership_id=None,
         'corp_membership': corp_membership,
         'is_renewal': is_renewal,
     }
+
+    # Unhack user now we're done.
+    if user_hacked:
+        user = None
+
     if is_renewal:
         params.update({'renew_from_id': membership.id})
 
@@ -1378,7 +1396,8 @@ def membership_default_add(request, slug='', membership_id=None,
         'demographics_form': demographics_form,
         'membership_form': membership_form,
         'captcha_form': captcha_form,
-        'membership_types': membership_types,
+        'membership_types': [i for _, i in get_membership_type_choices(
+            request.user, params['customer'], app, corp_membership)]
     }
     return render_to_response(template, context, RequestContext(request))
 
