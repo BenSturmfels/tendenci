@@ -192,7 +192,7 @@ VALID_MEMBERSHIP_STATUS_DETAIL = ['active', 'pending', 'expired', 'archive', 'di
 
 class MembershipType(OrderingBaseModel, TendenciBaseModel):
     PRICE_FORMAT = u'%s - %s'
-    ADMIN_FEE_FORMAT = u' (+%s admin fee)'
+    ADMIN_FEE_FORMAT = u' (+%s new member fee)'
     RENEW_FORMAT = u' Renewal'
 
     guid = models.CharField(max_length=50)
@@ -209,7 +209,7 @@ class MembershipType(OrderingBaseModel, TendenciBaseModel):
     renewal_price = models.DecimalField(_('Renewal Price'), max_digits=15, decimal_places=2,
         blank=True, default=0, null=True, help_text=_("Set 0 for free membership."))
     # for first time processing
-    admin_fee = models.DecimalField(_('Admin Fee'),
+    admin_fee = models.DecimalField(_('New Member Fee'),
         max_digits=15, decimal_places=2, blank=True, default=0, null=True,
         help_text=_("Admin fee for the first time processing"))
 
