@@ -1383,9 +1383,8 @@ def membership_default_add(request, slug='', membership_id=None,
                 args=[memberships[0].guid]
             ))
 
-    # Read-only version of the membership types from the form.
-    membership_types = [memtype.get_price_display(request.user, False)
-                        for memtype in membership_form.fields['membership_type'].queryset]
+    if 'payment_method' not in membership_form.fields:
+        app_fields = [a for a in app_fields if a.label != 'Payment Method']
 
     context = {
         'app': app,

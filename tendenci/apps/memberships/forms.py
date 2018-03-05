@@ -1105,8 +1105,7 @@ class MembershipDefault2Form(FormControlWidgetMixin, forms.ModelForm):
                 require_payment = (memb_type.price > 0 or memb_type.admin_fee > 0)
         else:
             # if all membership types are free, no need to display payment method
-            require_payment = self.membership_app.membership_types.filter(
-                                    Q(price__gt=0) | Q(admin_fee__gt=0)).exists()
+            require_payment = self.membership_app.needs_payment(self.is_renewal, customer)
 
         self_fields_keys = self.fields.keys()
 

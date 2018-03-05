@@ -61,14 +61,17 @@ calculate_membership_price = Signal(providing_args=['membership_type', 'user'])
 PricingOffer  = collections.namedtuple(
     'PricingOffer', 'label price admin_fee renewal_price')
 
+def sum_null(lst):
+    """Sum a list, treating None as zero."""
+    lst = (i for i in lst if i is not None)
+    if lst:
+        return sum(lst)
+    else:
+        return None
+
+
 def lowest_price(p1, p2, renew=False):
     """Returns the lowest of two PricingOffer instances."""
-    def _sum_null(lst):
-        lst = (i for i in lst if i is not None)
-        if lst:
-            return sum(lst)
-        else:
-            return None
 
     if p1 is None and p2 is None:
         return None
@@ -78,8 +81,8 @@ def lowest_price(p1, p2, renew=False):
         return p1
 
     if not renew:
-        p1_price = _sum_null([p1.price, p1.admin_fee])
-        p2_price = _sum_null([p2.price, p2.admin_fee])
+        p1_price = sum_null([p1.price, p1.admin_fee])
+        p2_price = sum_null([p2.price, p2.admin_fee])
     else:
         p1_price = p1.renewal_price
         p2_price = p2.renewal_price
