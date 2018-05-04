@@ -1012,6 +1012,13 @@ class DemographicsForm(FormControlWidgetMixin, forms.ModelForm):
         return demographic
 
 
+def _application_has_monthly_membership(app):
+    """Does this application contain single month membership types?"""
+    return any(
+        [mt.period_unit == 'months' and mt.period == 1
+         for mt in app.membership_types.all()])
+
+
 class MembershipDefault2Form(FormControlWidgetMixin, forms.ModelForm):
     STATUS_DETAIL_CHOICES = (
             ('active', _('Active')),
@@ -1152,6 +1159,13 @@ class MembershipDefault2Form(FormControlWidgetMixin, forms.ModelForm):
             if not 'corporate_membership_id' in self.fields:
                 self.fields['auto_renew'] = forms.BooleanField(label=_('Allow Auto Renew (only if credit card payment is selected)'), required=False)
 
+                if _application_has_monthly_membership(self.membership_app):
+                    # Force auto-renew.
+                    #
+                    # Note that because the field is disabled, the value isn't
+                    # submitted with the form.
+                    self.fields['auto_renew'].widget.attrs.update({'disabled': 'disabled', 'checked': 'checked'})
+
         self.add_form_control_class()
 
         if self.membership_app.donation_enabled:
@@ -1190,6 +1204,9 @@ class MembershipDefault2Form(FormControlWidgetMixin, forms.ModelForm):
             payment_method = self.cleaned_data['payment_method']
             if payment_method and not payment_method.is_online:
                 raise forms.ValidationError(_("Please either de-select it or change to an online payment method."))
+        if _application_has_monthly_membership(self.membership_app):
+            # Again, force auto-renew.
+            value = True
         return value
 
 
