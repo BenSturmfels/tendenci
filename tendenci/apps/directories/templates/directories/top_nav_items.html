@@ -37,14 +37,14 @@
 
                     <li class="content-item">
                         <span class="app-name">
-                            <a href="{% url 'directories' %}">{% trans "All" %} {% firstof MODULE_DIRECTORIES_LABEL_PLURAL trans "Directories" %}</a>
+                            <a href="{% url 'directories:directories' %}">{% trans "All" %} {% firstof MODULE_DIRECTORIES_LABEL_PLURAL trans "Directories" %}</a>
                         </span>
                     </li>
 
                     {% if user.is_authenticated %}
                         <li class="content-item">
                             <span class="app-name">
-                                <a href="{% url 'directory.add' %}">{% trans "Add" %} {% firstof MODULE_DIRECTORIES_LABEL trans "Directory" %}</a>
+                                <a href="{% url 'directories:add' %}">{% trans "Add" %} {% firstof MODULE_DIRECTORIES_LABEL trans "Directory" %}</a>
                             </span>
                         </li>
                     {% endif %}
@@ -52,13 +52,13 @@
                     {% if user.profile.is_superuser %}
                         <li class="content-item">
                             <span class="app-name">
-                                <a href="{% url 'directory.pending' %}">{% trans "Pending" %} {% firstof MODULE_DIRECTORIES_LABEL_PLURAL trans "directories" %}</a>
+                                <a href="{% url 'directories:pending' %}">{% trans "Pending" %} {% firstof MODULE_DIRECTORIES_LABEL_PLURAL trans "directories" %}</a>
                             </span>
                         </li>
 
                         <li class="content-item">
                             <span class="app-name">
-                                <a href="{% url 'directory.export' %}">{% trans "Export" %} {% firstof MODULE_DIRECTORIES_LABEL_PLURAL trans "directories" %}</a>
+                                <a href="{% url 'directories:export' %}">{% trans "Export" %} {% firstof MODULE_DIRECTORIES_LABEL_PLURAL trans "directories" %}</a>
                             </span>
                         </li>
                     {% endif %}
@@ -66,7 +66,7 @@
                     {% if can_edit_directory %}
                         <li class="content-item">
                             <span class="app-name">
-                                <a href="{% url 'directory_pricing.search' %}">{% trans "Pricing" %}</a>
+                                <a href="{% url 'directories:pricing.search' %}">{% trans "Pricing" %}</a>
                             </span>
                         </li>
                     {% endif %}
@@ -99,20 +99,20 @@
                             {% if can_edit_directory %}
                                 <li class="content-item">
                                     <span class="app-name">
-                                        <a href="{% url 'directory.edit' app_object.pk %}">{% trans "Edit" %} {% firstof MODULE_DIRECTORIES_LABEL trans "Directory" %}</a>
+                                        <a href="{% url 'directories:edit' app_object.pk %}">{% trans "Edit" %} {% firstof MODULE_DIRECTORIES_LABEL trans "Directory" %}</a>
                                     </span>
                                 </li>
 
                                 <li class="content-item">
                                     <span class="app-name">
-                                        <a href="{% url 'directory.edit.meta' app_object.pk %}">{% trans "Edit Meta" %}</a>
+                                        <a href="{% url 'directories:edit.meta' app_object.pk %}">{% trans "Edit Meta" %}</a>
                                     </span>
                                 </li>
 
                                 {% if app_object.renew_window %}
                                     <li class="content-item">
                                         <span class="app-name">
-                                            <a href="{% url 'directory.renew' app_object.pk %}">{% trans "Renew Directory" %}</a>
+                                            <a href="{% url 'directories:renew' app_object.pk %}">{% trans "Renew Directory" %}</a>
                                         </span>
                                     </li>
                                 {% endif %}
@@ -123,7 +123,7 @@
 
                                 <li class="content-item">
                                     <span class="app-name">
-                                        <a class="delete" href="{% url 'directory.delete' app_object.pk %}">{% trans "Delete" %} {% firstof MODULE_DIRECTORIES_LABEL trans "Directory" %}</a>
+                                        <a class="delete" href="{% url 'directories:delete' app_object.pk %}">{% trans "Delete" %} {% firstof MODULE_DIRECTORIES_LABEL trans "Directory" %}</a>
                                     </span>
                                 </li>
                             {% endif %}

@@ -2,7 +2,7 @@
 
 
 {% if SITE_GLOBAL_SEARCHINDEX %}
-    <form id="t-directories-search-form" class="form-inline t-search-form" action="{% url 'directories' %}" method="get">
+    <form id="t-directories-search-form" class="form-inline t-search-form" action="{% url 'directories:directories' %}" method="get">
         <fieldset>
             <div class="form-group{% if form.search_category.errors %} has-error{% endif %}">
                 <label for="{{ form.search_category.id_for_label }}" class="control-label">{{ form.search_category.label }}</label>

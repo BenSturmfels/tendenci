@@ -17,7 +17,7 @@
 
 {% block extra_head %}
     {{ block.super }}
-    <link rel="alternate" type="application/rss+xml" title="{% trans 'Latest' %}  {% firstof MODULE_DIRECTORIES_LABEL_PLURAL trans 'Directories' %}" href="{% url 'directory.feed' %}" />
+    <link rel="alternate" type="application/rss+xml" title="{% trans 'Latest' %}  {% firstof MODULE_DIRECTORIES_LABEL_PLURAL trans 'Directories' %}" href="{% url 'directories:feed' %}" />
 {% endblock %}
 
 {% block content_classes %}{{ block.super }} t-search-view{% endblock %}
@@ -38,7 +38,7 @@
     <p id="a-to-z">
     	{% trans "Directory Starts With:" %}
     	{% for letter in a_to_z %}
-    	<a href="{% url 'directories' %}?search_category=headline&search_method=starts_with&q={{letter }}">{{ letter|upper }}</a>
+    	<a href="{% url 'directories:directories' %}?search_category=headline&search_method=starts_with&q={{letter }}">{{ letter|upper }}</a>
     	{% endfor %}
     </p>
 
@@ -65,7 +65,7 @@
             {% search_result directory %}
         {% empty %}
             {% if user.profile.is_superuser %}
-                <p><a href="{% url 'directory.add' %}">
+                <p><a href="{% url 'directories:add' %}">
                     {% if MODULE_DIRECTORIES_LABEL %}
                         {% blocktrans %}
                             Add a New {{ MODULE_DIRECTORIES_LABEL }}

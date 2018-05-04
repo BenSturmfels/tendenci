@@ -16,7 +16,7 @@
     <h1>{% firstof MODULE_DIRECTORIES_LABEL trans 'Directory' %} {% trans "Edit" %}</h1>
 
 
-    <form class="form-horizontal" action="{% url "directory.edit" directory.pk %}" method="post" enctype="multipart/form-data">{% csrf_token %}
+    <form class="form-horizontal" action="{% url "directories:edit" directory.pk %}" method="post" enctype="multipart/form-data">{% csrf_token %}
     <div class="forms">
         {{ form|styled_form }}
         <input class="btn btn-primary" type="submit" value="{% trans 'Save Changes' %}" />

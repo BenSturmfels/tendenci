@@ -8,7 +8,7 @@
 
 
 <ul class="list-unstyled t-meta-data">
-    {% if directory.slug %}<li class="pull-right"><a href="{% url 'directory.print_view' directory.slug %}"><span class="glyphicon glyphicon-print"></span> {% trans "Print" %}</a></li>{% endif %}
+    {% if directory.slug %}<li class="pull-right"><a href="{% url 'directories:print_view' directory.slug %}"><span class="glyphicon glyphicon-print"></span> {% trans "Print" %}</a></li>{% endif %}
 
     {% if show_fb_connect|default:False %}
         <li>{% fb_like_button_iframe directory.get_absolute_url height=20 %}</li>
@@ -72,10 +72,10 @@
         {% if directory_cat %}
             <li>
                 <ul class="list-inline">
-                    <li><strong>{% trans "Category:" %}</strong> <a href="{% url 'directories' %}?cat={{ directory_cat.pk }}">{{ directory_cat.name }}</a></li>
+                    <li><strong>{% trans "Category:" %}</strong> <a href="{% url 'directories:directories' %}?cat={{ directory_cat.pk }}">{{ directory_cat.name }}</a></li>
                     {% if directory.sub_cat %}
                         <li>|</li>
-                        <li><strong>{% trans "Subcategory:" %}</strong> <a href="{% url 'directories' %}?cat={{ directory_cat.pk }}&sub_cat={{ directory.sub_cat.pk }}">{{ directory.sub_cat.name }}</a></li>
+                        <li><strong>{% trans "Subcategory:" %}</strong> <a href="{% url 'directories:directories' %}?cat={{ directory_cat.pk }}&sub_cat={{ directory.sub_cat.pk }}">{{ directory.sub_cat.name }}</a></li>
                     {% endif %}
                 </ul>
             </li>
@@ -86,7 +86,7 @@
         <li>
             <strong>{% trans "Tag(s):" %}</strong>
             {% for tag in directory.tags|tag_split %}
-                <a class="label label-default" href="{% url 'directories' %}?q=tag:{{ tag }}">{% blocktrans with tag_instance=tag %}{{ tag_instance }}{% endblocktrans %}</a>
+                <a class="label label-default" href="{% url 'directories:directories' %}?q=tag:{{ tag }}">{% blocktrans with tag_instance=tag %}{{ tag_instance }}{% endblocktrans %}</a>
            {% endfor %}
         <li>
     {% endif %}
@@ -119,7 +119,7 @@
 
                 <ul class="nav navbar-nav navbar-right t-meta-options-links">
                     <li><a class="t-meta-eventlog-link" href="{% url 'event_log.search' %}?object_id={{ directory.pk }}&source={{ directory.opt_app_label }}">{% trans "Eventlogs" %}</a></li>
-                    <li><a class="t-meta-edit-link" href="{% url 'directory.edit' directory.pk %}">{% trans "Edit" %}</a></li>
+                    <li><a class="t-meta-edit-link" href="{% url 'directories:edit' directory.pk %}">{% trans "Edit" %}</a></li>
                     <li class="dropup">
                         <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-expanded="false">{% spaceless %}
                             {% trans "Options" %} <span class="caret"></span>
@@ -128,12 +128,12 @@
                         <ul class="dropdown-menu" role="menu">
                            {% if can_delete_directory %}
                             <li>
-                                <a class="t-meta-delete-link" href="{% url 'directory.delete' directory.pk %}">{% trans "Delete" %}</a>
+                                <a class="t-meta-delete-link" href="{% url 'directories:delete' directory.pk %}">{% trans "Delete" %}</a>
                             </li>
                             {% endif %}
 
                             <li>
-                                <a href="{% url 'directory.edit.meta' directory.pk %}">{% trans "Edit Meta" %}</a>
+                                <a href="{% url 'directories:edit.meta' directory.pk %}">{% trans "Edit Meta" %}</a>
                             </li>
                         </ul>
                     </li>

@@ -42,7 +42,7 @@ from tendenci.apps.directories.forms import DirectorySearchForm
 
 @is_enabled('directories')
 def details(request, slug=None, template_name="directories/view.html"):
-    if not slug: return HttpResponseRedirect(reverse('directories'))
+    if not slug: return HttpResponseRedirect(reverse('directories', current_app=request.resolver_match.namespace))
     directory = get_object_or_404(Directory, slug=slug)
 
     if has_view_perm(request.user,'directories.view_directory',directory):
@@ -104,7 +104,7 @@ def search(request, template_name="directories/search.html"):
 
 
 def search_redirect(request):
-    return HttpResponseRedirect(reverse('directories'))
+    return HttpResponseRedirect(reverse('directories', current_app=request.resolver_match.namespace))
 
 
 @is_enabled('directories')
@@ -135,7 +135,7 @@ def add(request, form_class=DirectoryForm, template_name="directories/add.html")
     if not pricings and has_perm(request.user, 'directories.add_directorypricing'):
         msg_string = 'You need to add a %s Pricing before you can add %s.' % (get_setting('module', 'directories', 'label_plural'),get_setting('module', 'directories', 'label'))
         messages.add_message(request, messages.WARNING, _(msg_string))
-        return HttpResponseRedirect(reverse('directory_pricing.add'))
+        return HttpResponseRedirect(reverse('directories:pricing.add', current_app=request.resolver_match.namespace))
 
     require_payment = get_setting('module', 'directories', 'directoriesrequirespayment')
 
@@ -197,11 +197,11 @@ def add(request, form_class=DirectoryForm, template_name="directories/add.html")
 
             if directory.payment_method.lower() in ['credit card', 'cc']:
                 if directory.invoice and directory.invoice.balance > 0:
-                    return HttpResponseRedirect(reverse('payment.pay_online', args=[directory.invoice.id, directory.invoice.guid]))
+                    return HttpResponseRedirect(reverse('payment.pay_online', args=[directory.invoice.id, directory.invoice.guid], current_app=request.resolver_match.namespace))
             if can_add_active:
-                return HttpResponseRedirect(reverse('directory', args=[directory.slug]))
+                return HttpResponseRedirect(reverse('directory', args=[directory.slug], current_app=request.resolver_match.namespace))
             else:
-                return HttpResponseRedirect(reverse('directory.thank_you'))
+                return HttpResponseRedirect(reverse('directory.thank_you', current_app=request.resolver_match.namespace))
 
     return render_to_response(template_name,
                               {'form': form,
@@ -258,7 +258,7 @@ def edit(request, id, form_class=DirectoryForm, template_name="directories/edit.
             msg_string = 'Successfully updated %s' % directory
             messages.add_message(request, messages.SUCCESS, _(msg_string))
 
-            return HttpResponseRedirect(reverse('directory', args=[directory.slug]))
+            return HttpResponseRedirect(reverse('directory', args=[directory.slug], current_app=request.resolver_match.namespace))
 
     return render_to_response(template_name, {'directory': directory, 'form':form},
         context_instance=RequestContext(request))
@@ -288,7 +288,7 @@ def edit_meta(request, id, form_class=MetaForm, template_name="directories/edit-
             msg_string = 'Successfully updated meta for %s' % directory
             messages.add_message(request, messages.SUCCESS, _(msg_string))
 
-            return HttpResponseRedirect(reverse('directory', args=[directory.slug]))
+            return HttpResponseRedirect(reverse('directory', args=[directory.slug], current_app=request.resolver_match.namespace))
     else:
         form = form_class(instance=directory.meta)
 
@@ -349,7 +349,7 @@ def delete(request, id, template_name="directories/delete.html"):
 
             directory.delete()
 
-            return HttpResponseRedirect(reverse('directory.search'))
+            return HttpResponseRedirect(reverse('directory.search', current_app=request.resolver_match.namespace))
 
         return render_to_response(template_name, {'directory': directory},
             context_instance=RequestContext(request))
@@ -371,7 +371,7 @@ def pricing_add(request, form_class=DirectoryPricingForm, template_name="directo
                 if "_popup" in request.POST:
                     return HttpResponse('<script type="text/javascript">opener.dismissAddAnotherPopup(window, "%s", "%s");</script>' % (escape(directory_pricing.pk), escape(directory_pricing)))
 
-                return HttpResponseRedirect(reverse('directory_pricing.view', args=[directory_pricing.id]))
+                return HttpResponseRedirect(reverse('directories:pricing.view', args=[directory_pricing.id], current_app=request.resolver_match.namespace))
         else:
             form = form_class(user=request.user)
 
@@ -396,7 +396,7 @@ def pricing_edit(request, id, form_class=DirectoryPricingForm, template_name="di
             directory_pricing = form.save(commit=False)
             directory_pricing.save(request.user)
 
-            return HttpResponseRedirect(reverse('directory_pricing.view', args=[directory_pricing.id]))
+            return HttpResponseRedirect(reverse('directories:pricing.view', args=[directory_pricing.id], current_app=request.resolver_match.namespace))
     else:
         form = form_class(instance=directory_pricing, user=request.user)
 
@@ -433,7 +433,7 @@ def pricing_delete(request, id, template_name="directories/pricing-delete.html")
         directory_pricing.status = False
         directory_pricing.save()
 
-        return HttpResponseRedirect(reverse('directory_pricing.search'))
+        return HttpResponseRedirect(reverse('directories:pricing.search', current_app=request.resolver_match.namespace))
 
     return render_to_response(template_name, {'directory_pricing': directory_pricing},
         context_instance=RequestContext(request))
@@ -511,7 +511,7 @@ def approve(request, id, template_name="directories/approve.html"):
         msg_string = 'Successfully approved %s' % directory
         messages.add_message(request, messages.SUCCESS, _(msg_string))
 
-        return HttpResponseRedirect(reverse('directory', args=[directory.slug]))
+        return HttpResponseRedirect(reverse('directory', args=[directory.slug], current_app=request.resolver_match.namespace))
 
     return render_to_response(template_name, {'directory': directory},
             context_instance=RequestContext(request))
@@ -581,11 +581,11 @@ def renew(request, id, form_class=DirectoryRenewForm, template_name="directories
 
             if directory.payment_method.lower() in ['credit card', 'cc']:
                 if directory.invoice and directory.invoice.balance > 0:
-                    return HttpResponseRedirect(reverse('payments.views.pay_online', args=[directory.invoice.id, directory.invoice.guid]))
+                    return HttpResponseRedirect(reverse('payments.views.pay_online', args=[directory.invoice.id, directory.invoice.guid], current_app=request.resolver_match.namespace))
             if can_add_active:
-                return HttpResponseRedirect(reverse('directory', args=[directory.slug]))
+                return HttpResponseRedirect(reverse('directory', args=[directory.slug], current_app=request.resolver_match.namespace))
             else:
-                return HttpResponseRedirect(reverse('directory.thank_you'))
+                return HttpResponseRedirect(reverse('directory.thank_you', current_app=request.resolver_match.namespace))
 
     return render_to_response(template_name, {'directory':directory, 'form':form},
         context_instance=RequestContext(request))
@@ -617,7 +617,7 @@ def directory_export(request, template_name="directories/export.html"):
                           '--user=%s' % request.user.id])
         # log an event
         EventLog.objects.log()
-        return HttpResponseRedirect(reverse('directory.export_status', args=[identifier]))
+        return HttpResponseRedirect(reverse('directory.export_status', args=[identifier], current_app=request.resolver_match.namespace))
 
     context = {'form': form}
     return render_to_response(template_name, context, RequestContext(request))

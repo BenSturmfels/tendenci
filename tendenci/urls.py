@@ -87,7 +87,7 @@ urlpatterns += patterns('',
 
     url(r'^', include('tendenci.apps.articles.urls')),
     url(r'^', include('tendenci.apps.corporate_memberships.urls')),
-    url(r'^', include('tendenci.apps.directories.urls')),
+    url(r'^', include('tendenci.apps.directories.urls', namespace='directory', app_name='directories')),
     url(r'^', include('tendenci.apps.events.urls')),
     url(r'^', include('tendenci.apps.help_files.urls')),
     url(r'^', include('tendenci.apps.jobs.urls')),

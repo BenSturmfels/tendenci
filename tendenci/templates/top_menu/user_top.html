@@ -24,7 +24,7 @@
                             <li><a href="{% url "article.search" %}">{% trans "Articles" %}</a></li>
                         {% endif %}
                         {% if MODULE_DIRECTORIES_ENABLED %}
-                            <li><a href="{% url "directory.search" %}">{% trans "Directories" %}</a></li>
+                            <li><a href="{% url "directories:search" %}">{% trans "Directories" %}</a></li>
                         {% endif %}
                         {% if MODULE_EVENTS_ENABLED %}
                             <li><a href="{% url "event.month" %}">{% trans "Events" %}</a></li>

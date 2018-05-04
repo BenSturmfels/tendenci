@@ -126,7 +126,7 @@ class Directory(TendenciBaseModel):
 
     @models.permalink
     def get_absolute_url(self):
-        return ("directory", [self.slug])
+        return ("directories:directory", [self.slug])
 
     @models.permalink
     def get_renew_url(self):

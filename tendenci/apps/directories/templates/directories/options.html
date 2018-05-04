@@ -11,10 +11,10 @@
     <span>{{ opt_object.status_detail|capfirst }}</span>
     {% endif %}
 
-    <a class="option-link print" href="{% url "directory.print_view" opt_object.slug %}">{% trans "Print" %}</a>
+    <a class="option-link print" href="{% url "directories:print_view" opt_object.slug %}">{% trans "Print" %}</a>
 
     {% if can_edit %}
-        <a class="option-link edit" href="{% url "directory.edit" opt_object.pk %}">{% trans "Edit" %}</a>
+        <a class="option-link edit" href="{% url "directories:edit" opt_object.pk %}">{% trans "Edit" %}</a>
     {% endif %}
 
  {% if can_edit %}
@@ -23,7 +23,7 @@
         <div class="more-options-target">
             <ul>
                 <li class="divider">
-                  <a href="{% url "directory.edit.meta" opt_object.pk %}">{% trans "Edit Meta" %}</a>
+                  <a href="{% url "directories:edit.meta" opt_object.pk %}">{% trans "Edit Meta" %}</a>
                 </li>
 
                 <li>
@@ -36,7 +36,7 @@
 
                 {% if can_delete %}
                     <li>
-                        <a class="option-link delete" href="{% url "directory.delete" opt_object.pk %}">{% trans "Delete" %}</a>
+                        <a class="option-link delete" href="{% url "directories:delete" opt_object.pk %}">{% trans "Delete" %}</a>
                     </li>
                 {% endif %}
              </ul>

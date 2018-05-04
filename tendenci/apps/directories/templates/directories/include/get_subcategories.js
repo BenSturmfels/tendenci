@@ -7,7 +7,7 @@ $.ajaxSetup({beforeSend: function(xhr, settings){
 $(document).ready(function(){
     $('select#id_cat').change(function() {
         $.post(
-            "{% url "directory.get_subcategories" %}",
+            "{% url "directories:get_subcategories" %}",
             {'category':$(this).val(),
              'csrfmiddlewaretoken':$('input[name="csrfmiddlewaretoken"]').val(),},
             function(data, textStatus, jqXHR){
