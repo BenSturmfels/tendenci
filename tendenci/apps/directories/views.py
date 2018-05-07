@@ -104,7 +104,7 @@ def search(request, template_name="directories/search.html"):
 
 
 def search_redirect(request):
-    return HttpResponseRedirect(reverse('directories', current_app=request.resolver_match.namespace))
+    return HttpResponseRedirect(reverse('directories:directories', current_app=request.resolver_match.namespace))
 
 
 @is_enabled('directories')
