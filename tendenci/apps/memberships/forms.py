@@ -1160,11 +1160,11 @@ class MembershipDefault2Form(FormControlWidgetMixin, forms.ModelForm):
                 self.fields['auto_renew'] = forms.BooleanField(label=_('Allow Auto Renew (only if credit card payment is selected)'), required=False)
 
                 if _application_has_monthly_membership(self.membership_app):
-                    # Force auto-renew.
-                    #
-                    # Note that because the field is disabled, the value isn't
-                    # submitted with the form.
-                    self.fields['auto_renew'].widget.attrs.update({'disabled': 'disabled', 'checked': 'checked'})
+                    # Hide auto-renew field for monthly memberships and add a
+                    # flag so that the template knows to display the
+                    # auto-renewal disclaimer.
+                    del self.fields['auto_renew']
+                    self.auto_renew_forced = True
 
         self.add_form_control_class()
 

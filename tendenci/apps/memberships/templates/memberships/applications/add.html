@@ -256,6 +256,14 @@
             </div>
         {% endif %}
 
+        {% if membership_form.auto_renew_forced %}
+            <div class="form-group">
+                <div class="col-sm-offset-3 col-sm-9">
+                    <p><strong>We will automatically continue your membership and charge the membership fee to your payment method on a monthly basis until you cancel. There are no refunds or credits for partial months.</strong></p>
+                </div>
+            </div>
+        {% endif %}
+
         <div class="form-group">
             <div class="col-sm-offset-3 col-sm-9">
                 <button type="submit" class="btn btn-primary">{% trans "Submit" %}</button>
