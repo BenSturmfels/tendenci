@@ -42,7 +42,7 @@ from tendenci.apps.directories.forms import DirectorySearchForm
 
 @is_enabled('directories')
 def details(request, slug=None, template_name="directories/view.html"):
-    if not slug: return HttpResponseRedirect(reverse('directories', current_app=request.resolver_match.namespace))
+    if not slug: return HttpResponseRedirect(reverse('directories:directories', current_app=request.resolver_match.namespace))
     directory = get_object_or_404(Directory, slug=slug)
 
     if has_view_perm(request.user,'directories.view_directory',directory):
@@ -199,9 +199,9 @@ def add(request, form_class=DirectoryForm, template_name="directories/add.html")
                 if directory.invoice and directory.invoice.balance > 0:
                     return HttpResponseRedirect(reverse('payment.pay_online', args=[directory.invoice.id, directory.invoice.guid], current_app=request.resolver_match.namespace))
             if can_add_active:
-                return HttpResponseRedirect(reverse('directory', args=[directory.slug], current_app=request.resolver_match.namespace))
+                return HttpResponseRedirect(reverse('directories:directory', args=[directory.slug], current_app=request.resolver_match.namespace))
             else:
-                return HttpResponseRedirect(reverse('directory.thank_you', current_app=request.resolver_match.namespace))
+                return HttpResponseRedirect(reverse('directories:thank_you', current_app=request.resolver_match.namespace))
 
     return render_to_response(template_name,
                               {'form': form,
@@ -258,7 +258,7 @@ def edit(request, id, form_class=DirectoryForm, template_name="directories/edit.
             msg_string = 'Successfully updated %s' % directory
             messages.add_message(request, messages.SUCCESS, _(msg_string))
 
-            return HttpResponseRedirect(reverse('directory', args=[directory.slug], current_app=request.resolver_match.namespace))
+            return HttpResponseRedirect(reverse('directories:directory', args=[directory.slug], current_app=request.resolver_match.namespace))
 
     return render_to_response(template_name, {'directory': directory, 'form':form},
         context_instance=RequestContext(request))
@@ -288,7 +288,7 @@ def edit_meta(request, id, form_class=MetaForm, template_name="directories/edit-
             msg_string = 'Successfully updated meta for %s' % directory
             messages.add_message(request, messages.SUCCESS, _(msg_string))
 
-            return HttpResponseRedirect(reverse('directory', args=[directory.slug], current_app=request.resolver_match.namespace))
+            return HttpResponseRedirect(reverse('directories:directory', args=[directory.slug], current_app=request.resolver_match.namespace))
     else:
         form = form_class(instance=directory.meta)
 
@@ -349,7 +349,7 @@ def delete(request, id, template_name="directories/delete.html"):
 
             directory.delete()
 
-            return HttpResponseRedirect(reverse('directory.search', current_app=request.resolver_match.namespace))
+            return HttpResponseRedirect(reverse('directories:search', current_app=request.resolver_match.namespace))
 
         return render_to_response(template_name, {'directory': directory},
             context_instance=RequestContext(request))
@@ -511,7 +511,7 @@ def approve(request, id, template_name="directories/approve.html"):
         msg_string = 'Successfully approved %s' % directory
         messages.add_message(request, messages.SUCCESS, _(msg_string))
 
-        return HttpResponseRedirect(reverse('directory', args=[directory.slug], current_app=request.resolver_match.namespace))
+        return HttpResponseRedirect(reverse('directories:directory', args=[directory.slug], current_app=request.resolver_match.namespace))
 
     return render_to_response(template_name, {'directory': directory},
             context_instance=RequestContext(request))
@@ -583,9 +583,9 @@ def renew(request, id, form_class=DirectoryRenewForm, template_name="directories
                 if directory.invoice and directory.invoice.balance > 0:
                     return HttpResponseRedirect(reverse('payments.views.pay_online', args=[directory.invoice.id, directory.invoice.guid], current_app=request.resolver_match.namespace))
             if can_add_active:
-                return HttpResponseRedirect(reverse('directory', args=[directory.slug], current_app=request.resolver_match.namespace))
+                return HttpResponseRedirect(reverse('directories:directory', args=[directory.slug], current_app=request.resolver_match.namespace))
             else:
-                return HttpResponseRedirect(reverse('directory.thank_you', current_app=request.resolver_match.namespace))
+                return HttpResponseRedirect(reverse('directories:thank_you', current_app=request.resolver_match.namespace))
 
     return render_to_response(template_name, {'directory':directory, 'form':form},
         context_instance=RequestContext(request))
@@ -617,7 +617,7 @@ def directory_export(request, template_name="directories/export.html"):
                           '--user=%s' % request.user.id])
         # log an event
         EventLog.objects.log()
-        return HttpResponseRedirect(reverse('directory.export_status', args=[identifier], current_app=request.resolver_match.namespace))
+        return HttpResponseRedirect(reverse('directories:export_status', args=[identifier], current_app=request.resolver_match.namespace))
 
     context = {'form': form}
     return render_to_response(template_name, context, RequestContext(request))
