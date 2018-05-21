@@ -73,7 +73,7 @@ ORIENTATION_EXIF_TAG_KEY = 274
 
 def google_cmap_sign_url(url):
     """ Signs a URL and returns the URL with digital signature for Google static maps API.
-    
+
     For the detailed guides to generating a digital signature, go to:
     https://developers.google.com/maps/documentation/static-maps/get-api-key#digital-signature
     """
@@ -83,28 +83,28 @@ def google_cmap_sign_url(url):
     signing_secret = settings.GOOGLE_SMAPS_URL_SIGNING_SECRET
     if not signing_secret:
         return url
-    
+
     url_parts = urlparse(url)
     if not url_parts.query:
         return url
-    
+
     # don't sign if api key is not provided
     if 'key' not in dict(map(lambda x:x.split('='), url_parts.query.split('&'))):
         return url
-    
+
     # strip off the domain portion of the request, leaving only the path and the query
     url_parts_to_sign = url_parts.path + "?" + url_parts.query
-    
+
     # retrieve the URL signing secret by decoding it - it is encoded in a modified Base64
     decoded_signing_secret = base64.urlsafe_b64decode(signing_secret)
-    
+
     # sign it  using the HMAC-SHA1 algorithm
     signature = hmac.new(decoded_signing_secret, url_parts_to_sign, hashlib.sha1)
-    
-    # encode the resulting binary signature using the modified Base64 for URLs 
+
+    # encode the resulting binary signature using the modified Base64 for URLs
     # to convert this signature into something that can be passed within a URL
     encoded_signature = base64.urlsafe_b64encode(signature.digest())
-    
+
     # append digital signature
     return url + "&signature=" + encoded_signature
 
@@ -562,10 +562,10 @@ def apply_orientation(im):
     -----------
     im : Image
         An Image instance
-    
+
     Returns
     -------
-    Image 
+    Image
         A rotated or original image instance
     """
 
@@ -582,7 +582,7 @@ def apply_orientation(im):
                     if image_orientation == 8:
                         return im.rotate(90)
     except:
-        pass 
+        pass
     return im
 
 def image_rescale(img, size, force=True):
@@ -978,17 +978,17 @@ def get_latest_version():
 
 def add_tendenci_footer(email_content, content_type='html'):
     if content_type == 'text':
-        footer = _("This Association is Powered by Tendenci - The Open Source AMS https://www.tendenci.com")
+        footer = _("Fourth Estate Public Benefit Corporation - https://www.fourthestate.org")
         return email_content + '\n\n' + footer
     # Sorry but have to put html code here instead of in a template
     footer = '''<br /><div style="text-align:center; font-size:90%;">
-    {0} <a href="https://www.tendenci.com" style="text-decoration: none;">{1}</a>
+    {0} <a href="https://www.fourthestate.org" style="text-decoration: none;">{1}</a>
     <div>
     <div style="margin:5px auto;">
-    <a href="https://www.tendenci.com" style="text-decoration: none;">
-    <img src="https://www.tendenci.com/media/tendenci-os-ams.jpg" width="100" height="29" alt="tendenci logo" />
+    <a href="https://www.fourthestate.org" style="text-decoration: none;">
+    <img src="https://www.fourthestate.org/assets/logos/FourthEstate-emaillogo.png" width="180" height="60" alt="Fourth Estate logo" />
     </a>
-    </div>'''.format(_('This Association is Powered by'), _('Tendenci &ndash; The Open Source AMS'))
+    </div>'''.format(_('This email was sent by the'), _('Fourth Estate Public Benefit Corporation '))
     if email_content.find('</body>') != -1:
         return email_content.replace("</body>", footer + "\n</body>")
     return email_content + footer
