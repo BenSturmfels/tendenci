@@ -1,0 +1,55 @@
+{% extends "base-wide.html" %}
+{% load i18n %}
+{% load staticfiles %}
+
+
+{% block title %}View custom metadata{% endblock %}
+
+{% block meta_description %}{% endblock %}
+
+{% block meta_keywords %}{% endblock %}
+
+{% block banner %}{% endblock %}
+
+{% block content %}
+    {% if top_level_page_data %}
+        <h1>View custom metadata</h1>
+        <a class="btn btn-primary" href="{% url 'add_custom_meta_data' %}" role="button">Add custom metadata</a>
+        <div class="table-responsive">
+            <table class="table">
+               <tr>
+                   <th>Title</th>
+                   <th>Keywords</th>
+                   <th>Description</th>
+                   <th>Canonical URL</th>
+                   <th>Page Path</th>
+                   <th>Actions</th>
+               </tr>
+                {% for each in top_level_page_data %}
+                    <tr>
+                        <td>{{ each.title }}</td>
+                        <td>{{ each.keywords }}</td>
+                        <td>{{ each.description }}</td>
+                        <td>{{ each.canonical_url }}</td>
+                        <td>{{ each.page_path }}</td>
+                        <td><a href="{% url 'edit_custom_meta_data' each.id %}">Edit</a>/<a href="{% url 'delete_custom_meta_data' each.id %}">Delete</a></td>
+                    </tr>
+                {% endfor %}
+            </table>
+        </div>
+    {% else %}
+        <h1>No custom metadata found in the database</h1>
+        <a class="btn btn-primary" href="{% url 'add_custom_meta_data' %}" role="button">Add custom metadata</a>
+    {% endif %}
+{% endblock %}
+
+{% block top_bar %}
+    {% if request.user.is_authenticated %}
+    	{% include "jobs/top_nav.html" %}
+        {% if request.user.impersonated_user and request.user.impersonated_user.is_superuser or request.user.is_superuser  %}
+            {% if request.session.theme %}
+                {% include "themes/theme_top.html" %}
+            {% endif %}
+        {% endif %}
+    {% endif %}
+{% endblock %}

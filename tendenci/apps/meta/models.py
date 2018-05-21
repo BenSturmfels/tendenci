@@ -62,3 +62,17 @@ class Meta(models.Model):
         """
         for field in ('keywords','title','description', 'canonical_url'):
             setattr(self,'get_%s' % field, curry(self.__get_meta, field))
+
+
+class CustomMeta(models.Model):
+    title = models.CharField(max_length=200, blank=True)
+    keywords = models.TextField(blank=True)
+    description = models.TextField(blank=True)
+    page_path = models.CharField(max_length=500, unique=True)
+    canonical_url = models.CharField(max_length=500, blank=True)
+
+    update_dt = models.DateTimeField(auto_now=True)
+    create_dt = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        app_label = 'meta'

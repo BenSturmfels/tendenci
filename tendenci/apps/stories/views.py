@@ -22,6 +22,8 @@ from tendenci.apps.exports.utils import run_export_task
 from tendenci.apps.stories.models import Story
 from tendenci.apps.stories.forms import StoryForm
 from tendenci.apps.perms.utils import assign_files_perms
+from tendenci.apps.meta.forms import MetaForm
+from tendenci.apps.meta.models import Meta as MetaTags
 
 
 @is_enabled('stories')
@@ -204,3 +206,39 @@ def export(request, template_name="stories/export.html"):
 
     return render_to_response(template_name, {
     }, context_instance=RequestContext(request))
+
+
+@is_enabled('stories')
+@login_required
+def edit_meta(request, id, form_class=MetaForm, template_name="stories/edit-meta.html"):
+    """
+    Return page that allows you to edit meta-html information.
+    """
+    # check permission
+    story = get_object_or_404(Story, pk=id)
+    if not has_perm(request.user,'stories.change_story', story):
+        raise Http403
+
+    defaults = {
+        'title': story.get_title(),
+        'description': story.get_description(),
+        'keywords': story.get_keywords(),
+        'canonical_url': story.get_canonical_url(),
+    }
+    story.meta = MetaTags(**defaults)
+
+    if request.method == "POST":
+        form = form_class(request.POST, instance=story.meta)
+        if form.is_valid():
+            story.meta = form.save()  # save meta
+            story.save()  # save relationship
+
+            messages.add_message(request, messages.SUCCESS,
+                                 _('Successfully updated meta for %(p)s' % {'p': unicode(story)}))
+
+            return HttpResponseRedirect(reverse('story', args=[story.pk]))
+    else:
+        form = form_class(instance=story.meta)
+
+    return render_to_response(template_name, {'story': story, 'form': form},
+        context_instance=RequestContext(request))

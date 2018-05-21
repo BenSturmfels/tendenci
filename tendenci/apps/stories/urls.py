@@ -16,4 +16,5 @@ urlpatterns = patterns('tendenci.apps.stories.views',
     url(r'^%s/delete/(?P<id>\d+)/$' % urlpath, 'delete', name="story.delete"),
     url(r'^%s/export/$' % urlpath, 'export', name="story.export"),
     url(r'^%s/feed/$' % urlpath, LatestEntriesFeed(), name='story.feed'),
+    url(r'^%s/edit/meta/(?P<id>\d+)/$' % urlpath, 'edit_meta', name="story.edit.meta"),
 )

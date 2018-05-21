@@ -1,0 +1,35 @@
+{% extends "base-wide.html" %}
+{% load i18n %}
+{% load staticfiles %}
+{% load styled_forms %}
+
+
+{% block title %}Delete custom metadata{% endblock %}
+
+{% block meta_description %}{% endblock %}
+
+{% block meta_keywords %}{% endblock %}
+
+{% block banner %}{% endblock %}
+
+{% block content %}
+    <h1> Delete custom metadata</h1>
+     <form action="" method="post">{% csrf_token %}
+        <div class="forms">
+            {{ form|styled_form }}
+            <input type="submit" value="{% trans 'Submit' %}" />
+             or <a href="{% url 'show_custom_meta_data' %}">{% trans "Cancel" %}</a>
+        </div>
+     </form>
+{% endblock %}
+
+{% block top_bar %}
+    {% if request.user.is_authenticated %}
+    	{% include "jobs/top_nav.html" %}
+        {% if request.user.impersonated_user and request.user.impersonated_user.is_superuser or request.user.is_superuser  %}
+            {% if request.session.theme %}
+                {% include "themes/theme_top.html" %}
+            {% endif %}
+        {% endif %}
+    {% endif %}
+{% endblock %}

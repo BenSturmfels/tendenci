@@ -17,6 +17,8 @@ from tendenci.apps.files.models import File, file_directory
 from tendenci.apps.perms.models import TendenciBaseModel
 from tendenci.apps.stories.managers import StoryManager
 from tendenci.libs.abstracts.models import OrderingBaseModel
+from tendenci.apps.stories.module_meta import PageMeta
+from tendenci.apps.meta.models import Meta as MetaTags
 
 
 class Story(OrderingBaseModel, TendenciBaseModel):
@@ -67,6 +69,7 @@ class Story(OrderingBaseModel, TendenciBaseModel):
                                           content_type_field="content_type")
 
     objects = StoryManager()
+    meta = models.OneToOneField(MetaTags, null=True, on_delete=models.SET_NULL)
 
     class Meta:
         permissions = (("view_story", _("Can view story")),)
@@ -146,6 +149,14 @@ class Story(OrderingBaseModel, TendenciBaseModel):
             elif cat.parent:
                 items["sub_category"] = cat.parent
         return items
+
+    def get_meta(self, name):
+        """
+        This method is standard across all models that are
+        related to the Meta model.  Used to generate dynamic
+        meta information niche to this model.
+        """
+        return PageMeta().get_meta(self, name)
 
 
 class StoryPhoto(File):

@@ -1,3 +1,4 @@
+import re
 from django.db.models import ForeignKey, TextField
 from django.core.cache import cache
 from django.template import Library
@@ -7,6 +8,7 @@ from tendenci.libs.tinymce.models import HTMLField
 
 from tendenci.apps.files.models import File
 from tendenci.apps.site_settings.utils import get_setting
+from tendenci.apps.meta.models import CustomMeta
 
 
 register = Library()
@@ -43,3 +45,19 @@ def meta_og_image(obj, field_name):
         return value
     except Exception:
         return {}
+
+
+@register.filter(name='contains_custom_meta')
+def contains_custom_meta(page_path, key_to_return=None):
+    path = re.sub(r'(?<=\/)(\d+)(?=\/)', '#', page_path)
+    try:
+        meta_data_object = CustomMeta.objects.get(page_path=path)
+        if key_to_return:
+            return {"title": meta_data_object.title, "keywords": meta_data_object.keywords,
+                    "description": meta_data_object.description,
+                    "canonical_url": meta_data_object.canonical_url}.get(key_to_return)
+        else:
+            return {"title": meta_data_object.title, "keywords": meta_data_object.keywords,
+                    "description": meta_data_object.description, "canonical_url": meta_data_object.canonical_url}
+    except CustomMeta.DoesNotExist:
+        return False
