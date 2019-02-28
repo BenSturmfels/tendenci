@@ -229,6 +229,16 @@
                               {{ form.department }}
 
               </td>
+                         </tr>
+                         <tr >
+                          <td class="profile-label"><label for="id_industry">{% trans 'Industry'%}{%if form.industry.label in required_fields_list%}<span class="body-copy-alerts">*</span>{% endif %}</label></td>
+                          <td>
+              {% if form.industry.errors %}
+                  {{ form.industry.errors }}
+                {% endif %}
+                              {{ form.industry}}
+
+              </td>
                         </tr>
                          </table></td>
                       </tr>

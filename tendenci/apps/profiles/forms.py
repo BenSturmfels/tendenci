@@ -15,7 +15,7 @@ from tendenci.apps.base.utils import normalize_field_names
 from tendenci.apps.perms.forms import TendenciBaseForm
 from tendenci.apps.site_settings.utils import get_setting
 from tendenci.apps.user_groups.models import Group, GroupMembership
-from tendenci.apps.memberships.models import MembershipDefault
+from tendenci.apps.memberships.models import Industry, MembershipDefault
 from tendenci.apps.event_logs.models import EventLog
 from tendenci.apps.profiles.models import Profile, UserImport
 from tendenci.apps.profiles.utils import update_user
@@ -117,6 +117,8 @@ class ProfileForm(TendenciBaseForm):
     company = forms.CharField(label=_("Company"), max_length=100, required=False,
                               error_messages={'required': _('Company is a required field.')},
                                widget=forms.TextInput(attrs={'size':'45'}))
+    # Represents industry field from a MembershipDefault.
+    industry = forms.ModelChoiceField(queryset=Industry.objects.all(), required=False)
     department = forms.CharField(label=_("Department"), max_length=100, required=False,
                                widget=forms.TextInput(attrs={'size':'35'}))
     address = forms.CharField(label=_("Address"), max_length=150, required=False,
@@ -284,6 +286,18 @@ class ProfileForm(TendenciBaseForm):
             if self.user_current.profile.is_superuser and self.user_current == self.user_this:
                 self.fields['security_level'].choices = (('superuser',_('Superuser')),)
 
+            # Pre-fill the industry from latest MembershipDefault.
+            try:
+                self.fields["industry"].initial = (
+                    self.user_this.membershipdefault_set.filter(
+                        Q(status_detail__in=["active", "pending"])
+                    )
+                    .latest("expire_dt")
+                    .industry
+                )
+            except MembershipDefault.DoesNotExist:
+                pass
+
         if not self.user_current.profile.is_superuser:
             if 'status_detail' in self.fields: self.fields.pop('status_detail')
 
@@ -350,6 +364,11 @@ class ProfileForm(TendenciBaseForm):
             self.instance.creator_username = request.user.username
         self.instance.owner = request.user
         self.instance.owner_username = request.user.username
+
+        # Write industry back to active/pending MembershipDefault records.
+        self.user_this.membershipdefault_set.filter(
+            Q(status_detail__in=["active", "pending"])
+        ).update(industry=self.cleaned_data["industry"])
 
         return super(ProfileForm, self).save(*args, **kwargs)
 
