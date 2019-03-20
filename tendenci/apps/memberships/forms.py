@@ -1204,7 +1204,7 @@ class MembershipDefault2Form(FormControlWidgetMixin, forms.ModelForm):
     def clean_auto_renew(self):
         value = self.cleaned_data['auto_renew']
         if value:
-            payment_method = self.cleaned_data['payment_method']
+            payment_method = self.cleaned_data.get('payment_method')
             if payment_method and not payment_method.is_online:
                 raise forms.ValidationError(_("Please either de-select it or change to an online payment method."))
         return value
