@@ -1167,7 +1167,7 @@ class MembershipDefault2Form(FormControlWidgetMixin, forms.ModelForm):
 
         if get_setting('module', 'recurring_payments', 'enabled') and get_setting('module', 'memberships', 'autorenew'):
             if not 'corporate_membership_id' in self.fields:
-                self.fields['auto_renew'] = forms.BooleanField(label=_('Allow Auto Renew (only if credit card payment is selected)'), required=False)
+                self.fields['auto_renew'] = forms.BooleanField(label=_('Allow Auto Renew (only if credit card payment is selected)'), required=False, initial=True)
 
         self.add_form_control_class()
 
