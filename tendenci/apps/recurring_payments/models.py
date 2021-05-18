@@ -418,7 +418,8 @@ class RecurringPayment(models.Model):
             memberships = self.memberships
             if memberships:
                 for m in self.memberships:
-                    if m.expire_dt < datetime(now.year, now.month, now.day, 0, 0, 0) + timedelta(days=1):
+                    if m.expire and m.expire_dt < datetime(now.year, now.month, now.day, 0, 0, 0) + timedelta(days=1):
+                        print('{} ({}) expired {}.'.format(self.user.get_full_name(), m.membership_type, m.expire_dt.strftime('%d %b %Y')))
                         renewed_m = m.renew(m.user)
                         renewed_m.status_detail = 'pending'
                         renewed_m.save()
